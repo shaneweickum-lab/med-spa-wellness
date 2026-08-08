@@ -77,6 +77,14 @@ export interface AppointmentWithClient extends Appointment {
   clients: Pick<Client, 'id' | 'full_name'> | null
 }
 
+export interface AdminProfile {
+  id: string
+  created_at: string
+  full_name: string
+  email: string | null
+  role: 'engineer' | 'nurse' | 'admin' | 'superadmin'
+}
+
 export interface Payment {
   id: string
   created_at: string

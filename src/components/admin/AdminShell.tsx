@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Users, CalendarClock, LogOut, Sparkles } from 'lucide-react'
+import { Users, CalendarClock, ShieldCheck, LogOut, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const links = [
   { href: '/admin/clients', label: 'Clients', icon: Users },
   { href: '/admin/schedule', label: 'Schedule', icon: CalendarClock },
 ]
+
+const superadminLinks = [{ href: '/admin/staff', label: 'Staff', icon: ShieldCheck }]
 
 export function AdminShell({
   adminName,
@@ -58,7 +60,7 @@ export function AdminShell({
 
       <div className="flex-1 mx-auto max-w-[1600px] w-full px-6 py-8 grid lg:grid-cols-[220px_1fr] gap-8">
         <aside className="flex lg:flex-col gap-2 overflow-x-auto">
-          {links.map(({ href, label, icon: Icon }) => {
+          {[...links, ...(role === 'superadmin' ? superadminLinks : [])].map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href)
             return (
               <Link
