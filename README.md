@@ -67,6 +67,19 @@ Then copy your project URL and keys into the environment variables above.
    - Add `https://soulstysmeridian.com/portal/auth/confirm` (and `http://localhost:3000/portal/auth/confirm` for local dev) under **Redirect URLs**. The `/portal/auth/confirm` route that exchanges the emailed link for a session is still in place and unused in the meantime.
    - Supabase's default shared email service works out of the box (no SMTP setup required) but has modest rate limits — configure a custom SMTP provider under **Authentication → Emails** for real client volume.
 
+### ⚠️ Client intake currently bypasses Stripe (temporary, for testing)
+
+The intake form's final step (`src/components/intake/IntakeForm.tsx`) now submits directly to `POST /api/intake/test-submit`, which writes the same `clients` / `intake_submissions` / `payments` / `appointments` records the real flow would — using a synthetic `test_<uuid>` session id and a `payments.status` of `paid` with method `other`, clearly labeled "test bypass — no real charge" in the description — **without ever calling Stripe or charging a card**.
+
+The real Stripe flow (`POST /api/checkout/intake` → Stripe Checkout → `POST /api/intake/confirm`) is untouched and still fully functional; it's just no longer wired up to the form. This was disabled on request to make testing the intake flow faster while Stripe isn't configured/ready.
+
+**Before accepting real clients, restore the real charge:**
+
+1. In `src/components/intake/IntakeForm.tsx`, change `handlePayment()` back to `fetch('/api/checkout/intake', ...)` and redirect via `window.location.href = payload.url` (the previous implementation, still in git history) instead of calling `/api/intake/test-submit`.
+2. Restore the original button label/copy referencing the real intake fee and Stripe (also in git history).
+3. Delete `src/app/api/intake/test-submit/route.ts`.
+4. Make sure `STRIPE_SECRET_KEY` is set to a live key in your production environment variables.
+
 ### Creating admin (staff) accounts
 
 Creating a Supabase Auth user does **not** by itself grant admin portal access — you must also add a matching row to `admin_profiles`. This two-step process is intentional so a stray sign-up can never grant access on its own.
