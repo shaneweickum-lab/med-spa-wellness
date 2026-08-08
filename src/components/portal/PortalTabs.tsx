@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { LayoutDashboard, MessageSquare, UserCog, LogOut } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, UserCog } from 'lucide-react'
 import { OverviewTab } from './OverviewTab'
 import { MessagesTab } from './MessagesTab'
 import { ProfileTab } from './ProfileTab'
+import type { Client, ClientProtocol, Appointment, ClientMessage } from '@/types/admin'
 
 type Tab = 'overview' | 'messages' | 'profile'
 
@@ -14,7 +15,17 @@ const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'profile', label: 'Personal Info', icon: UserCog },
 ]
 
-export function PortalDashboard({ onLogout }: { onLogout: () => void }) {
+export function PortalTabs({
+  client,
+  protocols,
+  appointments,
+  messages,
+}: {
+  client: Client
+  protocols: ClientProtocol[]
+  appointments: Appointment[]
+  messages: ClientMessage[]
+}) {
   const [tab, setTab] = useState<Tab>('overview')
 
   return (
@@ -33,22 +44,12 @@ export function PortalDashboard({ onLogout }: { onLogout: () => void }) {
             {label}
           </button>
         ))}
-        <div className="lg:mt-4 lg:pt-4 lg:border-t border-gold/20">
-          <button
-            type="button"
-            onClick={onLogout}
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-gold-light transition-colors shrink-0"
-          >
-            <LogOut size={18} />
-            Sign Out
-          </button>
-        </div>
       </aside>
 
       <div>
-        {tab === 'overview' && <OverviewTab name="Jordan Ellis" />}
-        {tab === 'messages' && <MessagesTab />}
-        {tab === 'profile' && <ProfileTab />}
+        {tab === 'overview' && <OverviewTab client={client} protocols={protocols} appointments={appointments} />}
+        {tab === 'messages' && <MessagesTab clientId={client.id} clientName={client.full_name} messages={messages} />}
+        {tab === 'profile' && <ProfileTab client={client} />}
       </div>
     </div>
   )

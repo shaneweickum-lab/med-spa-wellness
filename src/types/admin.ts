@@ -7,6 +7,10 @@ export interface Client {
   date_of_birth: string | null
   state_of_residence: string | null
   status: 'active' | 'inactive' | 'pending'
+  user_id: string | null
+  address: string | null
+  emergency_contact: string | null
+  additional_notes: string | null
 }
 
 export interface IntakeSubmission {
