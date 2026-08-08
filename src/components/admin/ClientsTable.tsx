@@ -1,0 +1,78 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { Search } from 'lucide-react'
+import type { Client } from '@/types/admin'
+
+const statusStyle: Record<Client['status'], string> = {
+  active: 'text-cerulean-light border-cerulean/40 bg-cerulean/10',
+  pending: 'text-gold-light border-gold/40 bg-gold/10',
+  inactive: 'text-white/50 border-white/20 bg-white/5',
+}
+
+export function ClientsTable({ clients }: { clients: Client[] }) {
+  const [query, setQuery] = useState('')
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return clients
+    return clients.filter(
+      (c) => c.full_name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q),
+    )
+  }, [clients, query])
+
+  return (
+    <div>
+      <div className="relative max-w-sm mb-6">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, email, or phone..."
+          className="w-full rounded-full gold-border bg-white/5 pl-10 pr-4 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:gold-border-glow"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-white/50 py-16 text-center">No clients found.</p>
+      ) : (
+        <div className="card-panel gold-border rounded-2xl overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-white/40 uppercase text-xs tracking-wide border-b border-gold/20">
+                <th className="px-5 py-3 font-medium">Name</th>
+                <th className="px-5 py-3 font-medium">Email</th>
+                <th className="px-5 py-3 font-medium">Phone</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c) => (
+                <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                  <td className="px-5 py-3">
+                    <Link href={`/admin/clients/${c.id}`} className="text-gold-light hover:underline">
+                      {c.full_name}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-3 text-white/70">{c.email}</td>
+                  <td className="px-5 py-3 text-white/70">{c.phone}</td>
+                  <td className="px-5 py-3">
+                    <span className={`rounded-full border px-2.5 py-1 text-xs capitalize ${statusStyle[c.status]}`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-white/50">
+                    {new Date(c.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
