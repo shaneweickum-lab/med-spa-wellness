@@ -3,7 +3,7 @@ import { LinkButton } from '@/components/Button'
 
 const features = [
   { icon: MessageSquare, label: 'Secure messaging with your care team' },
-  { icon: UserCog, label: 'Manage your personal & insurance info' },
+  { icon: UserCog, label: 'Manage your personal info' },
   { icon: CalendarClock, label: 'Track protocols & upcoming visits' },
 ]
 

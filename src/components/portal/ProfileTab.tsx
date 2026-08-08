@@ -13,7 +13,6 @@ export function ProfileTab() {
     email: 'jordan.ellis@example.com',
     phone: '(555) 019-3345',
     address: '482 Harborview Lane, Suite 2, Coral Bay, FL',
-    insuranceProvider: 'N/A — Self-Pay Concierge Membership',
     emergencyContact: 'Sam Ellis · (555) 019-9981',
     notes: '',
   })
@@ -50,19 +49,12 @@ export function ProfileTab() {
         <Field label="Mailing Address" hint="Used for at-home lab kits & pharmacy shipments.">
           <TextInput value={profile.address} onChange={(e) => update('address', e.target.value)} />
         </Field>
-        <Field label="Insurance / Membership">
-          <TextInput
-            value={profile.insuranceProvider}
-            onChange={(e) => update('insuranceProvider', e.target.value)}
-          />
-        </Field>
         <Field label="Emergency Contact">
           <TextInput
             value={profile.emergencyContact}
             onChange={(e) => update('emergencyContact', e.target.value)}
           />
         </Field>
-        <div />
         <div className="md:col-span-2">
           <Field label="Notes for your care team" hint="Optional">
             <TextArea value={profile.notes} onChange={(e) => update('notes', e.target.value)} />
