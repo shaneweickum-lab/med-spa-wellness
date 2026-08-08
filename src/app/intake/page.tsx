@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { SectionHeading } from '@/components/SectionHeading'
 import { IntakeForm } from '@/components/intake/IntakeForm'
 
 export const metadata: Metadata = {
-  title: 'Patient Intake & Quiz | AETHERIA',
-  description: 'Secure, HIPAA-conscious patient intake and hormone symptom questionnaire.',
+  title: 'Client Intake & Quiz | Soulstys Meridian Wellness',
+  description: 'Secure client intake and wellness symptom questionnaire.',
 }
 
 export default function IntakePage() {
@@ -12,11 +13,13 @@ export default function IntakePage() {
     <div className="mx-auto max-w-4xl px-6 py-20">
       <SectionHeading
         eyebrow="Secure Intake"
-        title="Patient Intake & Symptom Quiz"
-        subtitle="Five short steps to help your provider understand your health history and goals before your consultation."
+        title="Client Intake & Wellness Quiz"
+        subtitle="Five short steps to help us understand your goals and match you with our clinical partner — a small intake fee applies to schedule your evaluation."
       />
       <div className="mt-12">
-        <IntakeForm />
+        <Suspense fallback={null}>
+          <IntakeForm />
+        </Suspense>
       </div>
     </div>
   )

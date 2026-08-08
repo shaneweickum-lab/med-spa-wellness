@@ -52,8 +52,8 @@ export function PortalLogin({ onLogin }: { onLogin: () => void }) {
 
         <p className="flex items-start gap-2 text-xs text-white/40 mt-6">
           <ShieldCheck size={14} className="mt-0.5 shrink-0 text-gold/60" />
-          Demo mode: any email &amp; password will sign you in. No real credentials or health data are
-          transmitted.
+          Demo mode: any email &amp; password will sign you in. No real credentials or personal information
+          are transmitted.
         </p>
       </div>
     </div>

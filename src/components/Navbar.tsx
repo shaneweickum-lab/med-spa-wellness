@@ -9,8 +9,8 @@ import { LinkButton } from './Button'
 const links = [
   { href: '/', label: 'Home' },
   { href: '/peptides', label: 'Protocols' },
-  { href: '/intake', label: 'Patient Intake' },
-  { href: '/telehealth', label: 'Telehealth & EMR' },
+  { href: '/intake', label: 'Client Intake' },
+  { href: '/platform', label: 'Client Platform' },
   { href: '/portal', label: 'Client Portal' },
 ]
 
@@ -23,7 +23,9 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
           <Sparkles className="text-gold group-hover:text-gold-light transition-colors" size={22} />
-          <span className="font-display text-2xl tracking-[0.15em] text-gradient-gold">AETHERIA</span>
+          <span className="font-display text-xl md:text-2xl tracking-[0.1em] md:tracking-[0.12em] text-gradient-gold whitespace-nowrap">
+            SOULSTYS <span className="hidden sm:inline">MERIDIAN</span>
+          </span>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8">

@@ -26,7 +26,7 @@ export function OverviewTab({ name }: { name: string }) {
           <FlaskConical className="text-gold" size={24} />
           <h3 className="font-display text-lg text-gold-light mt-3">Latest Labs</h3>
           <p className="text-white/60 text-sm mt-1">Comprehensive Hormone Panel</p>
-          <p className="text-xs text-white/40 mt-2">Reviewed 4 days ago</p>
+          <p className="text-xs text-white/40 mt-2">Shared by partner · 4 days ago</p>
         </div>
       </div>
 

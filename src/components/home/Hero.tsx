@@ -18,7 +18,7 @@ export function Hero() {
       <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32 flex flex-col items-center text-center gap-8">
         <span className="flex items-center gap-2 rounded-full gold-border bg-white/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-gold-light">
           <ShieldCheck size={14} />
-          Physician-Led &middot; Concierge Hormone &amp; Peptide Care
+          Concierge Care Coordination &middot; TRT, BHRT &amp; Peptide Programs
         </span>
 
         <GenderToggle />

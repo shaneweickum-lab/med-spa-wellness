@@ -11,7 +11,7 @@ interface FocusContextValue {
 
 const FocusContext = createContext<FocusContextValue | undefined>(undefined)
 
-const STORAGE_KEY = 'aetheria-focus'
+const STORAGE_KEY = 'soulstys-focus'
 
 export function FocusProvider({ children }: { children: ReactNode }) {
   const [focus, setFocus] = useState<Focus>('men')

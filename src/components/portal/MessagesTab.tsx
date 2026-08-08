@@ -5,7 +5,7 @@ import { Send, UserRound } from 'lucide-react'
 
 interface Message {
   id: string
-  from: 'patient' | 'provider'
+  from: 'client' | 'team'
   author: string
   body: string
   time: string
@@ -14,23 +14,23 @@ interface Message {
 const initialMessages: Message[] = [
   {
     id: 'm1',
-    from: 'provider',
-    author: 'Dr. Elena Marchetti',
-    body: 'Hi! Your latest labs are in and everything looks great. Let’s discuss your next dose adjustment at your upcoming visit.',
+    from: 'team',
+    author: 'Care Coordinator · Morgan',
+    body: 'Hi! We’ve received your latest results from our clinical partner and everything looks great. Let’s get your next appointment on the calendar.',
     time: 'Mon 9:14 AM',
   },
   {
     id: 'm2',
-    from: 'patient',
+    from: 'client',
     author: 'You',
     body: 'Thank you! I have been feeling noticeably better this month. Looking forward to the visit.',
     time: 'Mon 11:02 AM',
   },
   {
     id: 'm3',
-    from: 'provider',
+    from: 'team',
     author: 'Care Coordinator',
-    body: 'Reminder: your telehealth visit is scheduled for Thursday at 2:00 PM. You will receive a secure link 15 minutes prior.',
+    body: 'Reminder: your telehealth visit with our clinical partner is scheduled for Thursday at 2:00 PM. You will receive a secure link 15 minutes prior.',
     time: 'Tue 8:30 AM',
   },
 ]
@@ -43,7 +43,7 @@ export function MessagesTab() {
     if (!draft.trim()) return
     setMessages((m) => [
       ...m,
-      { id: `m${m.length + 1}`, from: 'patient', author: 'You', body: draft.trim(), time: 'Just now' },
+      { id: `m${m.length + 1}`, from: 'client', author: 'You', body: draft.trim(), time: 'Just now' },
     ])
     setDraft('')
   }
@@ -52,17 +52,17 @@ export function MessagesTab() {
     <div className="card-panel gold-border rounded-2xl flex flex-col h-[600px]">
       <div className="px-6 py-4 border-b border-gold/20">
         <h2 className="font-display text-2xl text-gold-light">Care Team Messages</h2>
-        <p className="text-xs text-white/40">Secure messaging thread with your AETHERIA care team.</p>
+        <p className="text-xs text-white/40">Secure messaging thread with your Soulstys Meridian care team.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
         {messages.map((m) => (
-          <div key={m.id} className={`flex gap-3 ${m.from === 'patient' ? 'flex-row-reverse text-right' : ''}`}>
+          <div key={m.id} className={`flex gap-3 ${m.from === 'client' ? 'flex-row-reverse text-right' : ''}`}>
             <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-royal to-cerulean flex items-center justify-center">
               <UserRound size={16} className="text-white" />
             </div>
             <div className={`max-w-md rounded-2xl px-4 py-3 text-sm ${
-              m.from === 'patient' ? 'bg-gold/15 text-white' : 'bg-white/5 text-white/80'
+              m.from === 'client' ? 'bg-gold/15 text-white' : 'bg-white/5 text-white/80'
             }`}>
               <p className="text-xs text-gold-light font-medium mb-1">{m.author} &middot; {m.time}</p>
               <p className="leading-relaxed">{m.body}</p>

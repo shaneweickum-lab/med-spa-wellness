@@ -1,16 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckCircle2, Lock, ShieldCheck } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { CheckCircle2, Lock, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { DisclaimerBanner } from '@/components/DisclaimerBanner'
 import { Field, TextInput, TextArea, CheckboxRow, ScaleField } from '@/components/form/inputs'
+import { INTAKE_FEE_LABEL } from '@/lib/pricing'
 
 type Focus = 'men' | 'women'
 
 interface IntakeData {
   consentAcknowledged: boolean
-  telehealthConsent: boolean
+  contactConsent: boolean
   eSignature: string
   focus: Focus
   fullName: string
@@ -52,11 +54,13 @@ const womenSymptoms = [
   'Skin, hair, or energy changes',
 ]
 
-const steps = ['Consent', 'Personal Info', 'Health History', 'Symptom Quiz', 'Review']
+const steps = ['Consent', 'Personal Info', 'Health History', 'Symptom Quiz', 'Review & Pay']
+
+const DRAFT_KEY = 'soulstys-intake-draft'
 
 const initial: IntakeData = {
   consentAcknowledged: false,
-  telehealthConsent: false,
+  contactConsent: false,
   eSignature: '',
   focus: 'men',
   fullName: '',
@@ -72,9 +76,45 @@ const initial: IntakeData = {
 }
 
 export function IntakeForm() {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [data, setData] = useState<IntakeData>(initial)
   const [submitted, setSubmitted] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const payment = searchParams.get('payment')
+    if (!payment) return
+
+    // One-time sync from external systems (the redirect URL & sessionStorage) after returning
+    // from Stripe Checkout — not a derived-state loop.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const draft = window.sessionStorage.getItem(DRAFT_KEY)
+    if (payment === 'success') {
+      if (draft) {
+        try {
+          setData(JSON.parse(draft))
+        } catch {
+          // ignore malformed draft
+        }
+        window.sessionStorage.removeItem(DRAFT_KEY)
+      }
+      setSubmitted(true)
+    } else if (payment === 'cancelled') {
+      if (draft) {
+        try {
+          setData(JSON.parse(draft))
+        } catch {
+          // ignore malformed draft
+        }
+      }
+      setStep(steps.length - 1)
+      setPaymentError('Payment was cancelled — your responses were kept. You can try again when ready.')
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const symptomList = data.focus === 'men' ? menSymptoms : womenSymptoms
 
@@ -92,10 +132,39 @@ export function IntakeForm() {
   }
 
   const canProceed = (() => {
-    if (step === 0) return data.consentAcknowledged && data.telehealthConsent && data.eSignature.trim().length > 1
+    if (step === 0) return data.consentAcknowledged && data.contactConsent && data.eSignature.trim().length > 1
     if (step === 1) return data.fullName && data.dob && data.email && data.phone
     return true
   })()
+
+  async function handlePayment() {
+    setPaymentError(null)
+    setIsPaying(true)
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data))
+
+      const res = await fetch('/api/checkout/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          focus: data.focus,
+        }),
+      })
+      const payload = await res.json()
+
+      if (!res.ok || !payload.url) {
+        throw new Error(payload.error || 'Unable to start checkout. Please try again.')
+      }
+
+      window.location.href = payload.url
+    } catch (err) {
+      setIsPaying(false)
+      setPaymentError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    }
+  }
 
   if (submitted) {
     return (
@@ -103,13 +172,13 @@ export function IntakeForm() {
         <CheckCircle2 className="text-gold" size={48} />
         <h2 className="font-display text-3xl text-gradient-gold">Intake Received</h2>
         <p className="text-white/70 max-w-lg">
-          Thank you, {data.fullName.split(' ')[0] || 'friend'}. A member of our clinical team will reach out
-          within 1 business day to schedule your consultation and lab work.
+          Thank you, {data.fullName.split(' ')[0] || 'friend'}. Your {INTAKE_FEE_LABEL} intake fee has been
+          received. A member of our care team will reach out within 1 business day to schedule your
+          evaluation with our clinical partner.
         </p>
         <p className="text-xs text-white/40 max-w-lg">
-          Demo note: this form does not transmit protected health information anywhere. A production
-          deployment would submit this payload over an encrypted channel to a HIPAA-compliant, BAA-covered
-          backend and EMR system.
+          Payments are processed securely by Stripe. Soulstys Meridian Wellness never sees or stores your
+          card details.
         </p>
       </div>
     )
@@ -146,16 +215,18 @@ export function IntakeForm() {
           <div className="gold-border rounded-2xl bg-white/5 p-5 flex gap-3 items-start">
             <Lock className="text-gold shrink-0 mt-1" size={20} />
             <p className="text-sm text-white/70 leading-relaxed">
-              We treat your information with the same care standards as protected health information (PHI).
-              Fields marked private are never shared outside your care team without your written consent.
+              We collect this information to match you with the right program. It is shared only with our
+              independent, licensed healthcare partner for clinical evaluation — never sold or used for
+              marketing.
             </p>
           </div>
           <CheckboxRow checked={data.consentAcknowledged} onChange={(v) => update('consentAcknowledged', v)}>
-            I acknowledge the Notice of Privacy Practices and consent to AETHERIA collecting my health
-            information for the purpose of clinical evaluation.
+            I consent to Soulstys Meridian Wellness collecting this information and sharing it with our
+            independent, licensed healthcare partner for clinical evaluation.
           </CheckboxRow>
-          <CheckboxRow checked={data.telehealthConsent} onChange={(v) => update('telehealthConsent', v)}>
-            I consent to receive care via telehealth, where appropriate, in addition to in-clinic visits.
+          <CheckboxRow checked={data.contactConsent} onChange={(v) => update('contactConsent', v)}>
+            I consent to being contacted by phone, email, or text regarding scheduling and care
+            coordination.
           </CheckboxRow>
           <Field label="Type your full name as your electronic signature" required>
             <TextInput
@@ -198,7 +269,7 @@ export function IntakeForm() {
           <Field label="Phone Number" required>
             <TextInput type="tel" value={data.phone} onChange={(e) => update('phone', e.target.value)} />
           </Field>
-          <Field label="State of Residence" hint="Determines telehealth eligibility & compounding options.">
+          <Field label="State of Residence" hint="Helps us match you with the right care options.">
             <TextInput value={data.stateOfResidence} onChange={(e) => update('stateOfResidence', e.target.value)} />
           </Field>
         </div>
@@ -227,8 +298,8 @@ export function IntakeForm() {
       {step === 3 && (
         <div className="flex flex-col gap-6">
           <p className="text-white/60 text-sm">
-            Rate how much each symptom currently affects your quality of life. This helps your provider
-            prioritize your protocol.
+            Rate how much each symptom currently affects your quality of life. This helps our clinical
+            partner prioritize your protocol.
           </p>
           {symptomList.map((s) => (
             <ScaleField
@@ -248,7 +319,7 @@ export function IntakeForm() {
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2 text-gold-light">
             <ShieldCheck size={20} />
-            <p className="text-sm">Please review your responses before submitting.</p>
+            <p className="text-sm">Please review your responses before continuing to payment.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4 text-sm text-white/70">
             <p><span className="text-gold-light">Program: </span>{data.focus === 'men' ? "Men's TRT" : "Women's BHRT"}</p>
@@ -258,12 +329,31 @@ export function IntakeForm() {
             <p><span className="text-gold-light">Phone: </span>{data.phone || '—'}</p>
             <p><span className="text-gold-light">Conditions: </span>{data.conditions.join(', ') || 'None reported'}</p>
           </div>
+
+          <div className="gold-border rounded-2xl bg-white/5 p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-gold-light font-medium">Client Intake &amp; Consultation Fee</p>
+              <p className="text-xs text-white/50 mt-1">
+                A one-time fee to process your intake and schedule your evaluation with our clinical
+                partner.
+              </p>
+            </div>
+            <p className="font-display text-3xl text-gradient-gold shrink-0">{INTAKE_FEE_LABEL}</p>
+          </div>
+
+          {paymentError && (
+            <p className="flex items-start gap-2 text-sm text-red-300">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              {paymentError}
+            </p>
+          )}
+
           <DisclaimerBanner variant="compact" />
         </div>
       )}
 
       <div className="flex justify-between mt-10">
-        <Button variant="secondary" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+        <Button variant="secondary" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || isPaying}>
           Back
         </Button>
         {step < steps.length - 1 ? (
@@ -271,8 +361,8 @@ export function IntakeForm() {
             Continue
           </Button>
         ) : (
-          <Button variant="primary" onClick={() => setSubmitted(true)}>
-            Submit Intake
+          <Button variant="primary" onClick={handlePayment} disabled={isPaying}>
+            {isPaying ? 'Redirecting to payment…' : `Continue to Payment (${INTAKE_FEE_LABEL})`}
           </Button>
         )}
       </div>

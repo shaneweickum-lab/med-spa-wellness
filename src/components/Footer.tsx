@@ -14,8 +14,8 @@ const columns = [
   {
     title: 'Care',
     links: [
-      { href: '/intake', label: 'Patient Intake & Quiz' },
-      { href: '/telehealth', label: 'Telehealth & EMR' },
+      { href: '/intake', label: 'Client Intake & Quiz' },
+      { href: '/platform', label: 'Client Platform' },
       { href: '/portal', label: 'Client Portal' },
     ],
   },
@@ -36,11 +36,14 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2">
               <Sparkles className="text-gold" size={20} />
-              <span className="font-display text-2xl tracking-[0.15em] text-gradient-gold">AETHERIA</span>
+              <span className="font-display text-2xl tracking-[0.12em] text-gradient-gold">
+                SOULSTYS MERIDIAN
+              </span>
             </Link>
             <p className="mt-4 text-sm text-white/60 leading-relaxed max-w-sm">
-              A bespoke medical aesthetics &amp; wellness atelier specializing in TRT, BHRT, and peptide
-              therapy — precision hormone care for men and women, guided by licensed clinicians.
+              Soulstys Meridian Wellness is a concierge client experience for TRT, BHRT, and peptide
+              therapy programs — intake, tracking, and communication, connecting you with an independent
+              licensed healthcare partner for every clinical service.
             </p>
             <div className="mt-5 flex gap-4 text-white/50">
               <a href="#" aria-label="Instagram" className="hover:text-gold-light transition-colors">
@@ -80,7 +83,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail size={16} className="text-gold/70 shrink-0" />
-                concierge@aetheriamedspa.com
+                concierge@soulstysmeridian.com
               </li>
             </ul>
           </div>
@@ -91,8 +94,8 @@ export function Footer() {
         <DisclaimerBanner variant="compact" className="mb-6" />
 
         <div className="flex flex-col sm:flex-row justify-between gap-2 text-xs text-white/40">
-          <p>&copy; {new Date().getFullYear()} AETHERIA Medical Aesthetics &amp; Wellness. All rights reserved.</p>
-          <p>HIPAA-conscious design &middot; Licensed clinical oversight required for all therapies.</p>
+          <p>&copy; {new Date().getFullYear()} Soulstys Meridian Wellness. All rights reserved.</p>
+          <p>Clinical services are provided by an independent, licensed healthcare partner.</p>
         </div>
       </div>
     </footer>

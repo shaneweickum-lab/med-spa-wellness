@@ -20,7 +20,7 @@ export const protocols: Protocol[] = [
     group: "Men's Performance · TRT",
     tagline: 'Foundational hormone optimization for vitality, drive, and lean mass.',
     description:
-      'Bio-identical testosterone therapy designed to restore serum levels to an optimal physiologic range, guided by comprehensive lab panels and physician oversight.',
+      'Bio-identical testosterone therapy designed to restore serum levels to an optimal physiologic range, guided by comprehensive lab panels and our clinical partner\'s oversight.',
     benefits: ['Restored energy & drive', 'Improved lean muscle retention', 'Sharper focus & mood stability'],
     administration: 'Typically weekly or bi-weekly subcutaneous/IM injection; dose individualized after labs.',
     disclaimer: 'Requires baseline & follow-up bloodwork. Controlled substance — prescribed only after clinical evaluation.',
@@ -90,7 +90,7 @@ export const protocols: Protocol[] = [
       'Custom-compounded bio-identical hormone therapy formulated to ease transitional symptoms and restore hormonal equilibrium.',
     benefits: ['Reduced hot flashes & night sweats', 'Improved sleep & mood', 'Support for bone & heart health'],
     administration: 'Available as creams, patches, or troches; individualized by lab work & symptom review.',
-    disclaimer: 'Compounded formulations reviewed with your physician based on comprehensive hormone panels.',
+    disclaimer: 'Compounded formulations reviewed with our clinical partner based on comprehensive hormone panels.',
   },
   {
     id: 'bhrt-dhea-pregnenolone',
@@ -119,7 +119,7 @@ export const protocols: Protocol[] = [
     name: 'Semaglutide / Tirzepatide',
     category: 'both',
     group: 'Metabolic & Weight Optimization',
-    tagline: 'Physician-guided metabolic and weight management.',
+    tagline: 'Provider-guided metabolic and weight management.',
     description:
       'GLP-1 receptor agonist therapy integrated into a broader metabolic optimization plan with nutritional and clinical support.',
     benefits: ['Appetite regulation', 'Supports sustainable weight goals', 'Paired with clinical monitoring'],

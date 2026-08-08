@@ -8,7 +8,7 @@ export function ProgramsSplit() {
       <SectionHeading
         eyebrow="Two Paths, One Standard of Care"
         title="Tailored to your biology"
-        subtitle="Every protocol begins with comprehensive lab work and a licensed clinician review — then diverges into a plan built for your goals."
+        subtitle="Every program begins with comprehensive lab work and a review by our independent, licensed clinical partner — then diverges into a plan built for your goals."
       />
 
       <div className="mt-14 grid md:grid-cols-2 gap-8">
