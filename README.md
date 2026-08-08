@@ -11,6 +11,7 @@ Soulstys Meridian Wellness is a client experience and care-coordination company 
 - Client platform overview (intake, tracking, communication, partner model)
 - Client portal with secure messaging and personal info management (demo auth)
 - Consultation booking page, saved to Supabase
+- **Admin portal** (`/admin`) — an EMR-style console for staff: client roster, per-client intake answers, assigned protocols, internal notes, secure messaging, and appointment scheduling
 
 Design tokens: dark velvet background, royal purple / cerulean blue gradients, champagne gold trim.
 
@@ -33,6 +34,8 @@ Copy `.env.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_INTAKE_FEE_CENTS` | The client intake fee in cents (defaults to `4900` = $49.00). Used both for the displayed price and the actual Stripe charge. |
 | `SUPABASE_URL` | Your Supabase project URL (e.g. `https://xxxx.supabase.co`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase **service role** key (server-side only, never expose to the browser). Dashboard → Project Settings → API → Project API keys → `service_role`. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Same project URL as above, exposed to the browser. Required for admin portal sign-in. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase **anon/public** key. Safe to expose — Row Level Security restricts what it can actually do. Dashboard → Project Settings → API → Project API keys → `anon` / `public`. |
 
 Without `STRIPE_SECRET_KEY` or the Supabase variables set, the affected features show a friendly inline error instead of crashing — the rest of the site works normally.
 
@@ -40,18 +43,35 @@ When deploying on Vercel, add these as Project Environment Variables (Settings �
 
 ## Database Setup (Supabase)
 
-This project stores two things in Supabase, written server-side only:
+Run both migrations, in order, in your Supabase project's **SQL Editor** (or via `supabase db push` if you use the CLI):
 
-- **`contact_requests`** — consultation booking form submissions
-- **`intake_submissions`** — client intake form responses, saved only after the Stripe Checkout payment for that session is verified as paid
+1. [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) — `intake_submissions` and `contact_requests`. RLS enabled, no public policies; only reachable with the service role key from server-side code.
+2. [`supabase/migrations/0002_admin_emr.sql`](./supabase/migrations/0002_admin_emr.sql) — the admin portal schema: `admin_profiles`, `clients`, `client_notes`, `client_messages`, `client_protocols`, `appointments`, plus a `client_id` link added to `intake_submissions`. RLS restricts every one of these tables to authenticated users who have a row in `admin_profiles`.
 
-To set up a fresh Supabase project:
+Then copy your project URL and keys into the environment variables above.
 
-1. Open your project's **SQL Editor** in the Supabase dashboard.
-2. Paste and run the contents of [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). This creates both tables with Row Level Security enabled and no public policies — the tables are only reachable using the service role key from server-side code, never from the browser.
-3. Copy your project URL and service role key into `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (see above).
+### Creating admin (staff) accounts
 
-If you use the Supabase CLI instead, `supabase db push` will apply the same migration file from the `supabase/migrations` directory.
+Creating a Supabase Auth user does **not** by itself grant admin portal access — you must also add a matching row to `admin_profiles`. This two-step process is intentional so a stray sign-up can never grant access on its own:
+
+1. In the Supabase dashboard, go to **Authentication → Users → Add user** and create an account for yourself or a nurse (email + password, or send an invite).
+2. Copy that user's UUID from the Users table.
+3. In the **SQL Editor**, run:
+   ```sql
+   insert into public.admin_profiles (id, full_name, role)
+   values ('paste-the-user-uuid-here', 'Jane Doe', 'nurse'); -- role: 'engineer' | 'nurse' | 'admin'
+   ```
+4. That person can now sign in at `/admin/login`. All admin accounts currently have equal access (see below); the `role` column is stored for future permission tiers if you ever want to restrict nurses from certain actions.
+
+## Admin Portal (`/admin`)
+
+An EMR-style console, separate from the public site (no marketing nav/footer) and gated by real Supabase Auth — distinct from the client portal's demo login.
+
+- **Clients** (`/admin/clients`) — full roster, searchable by name/email/phone. Clients are created automatically the moment someone completes and pays for intake, or can be added manually (`New Client`).
+- **Client detail** (`/admin/clients/[id]`) — tabs for Overview, Intake Answers (their submitted questionnaire), Protocols (assign/manage peptide & HRT protocols from the catalogue), Notes (internal, never shown to the client), and Messages (secure two-way thread).
+- **Schedule** (`/admin/schedule`) — day view of appointments with a form to block time for a client in 10–45 minute blocks (5-minute increments), with a basic overlap warning.
+
+All authenticated admins (nurses and engineers alike) currently have equal, full access to the admin portal.
 
 ## Build
 
@@ -66,4 +86,4 @@ This is a standard Next.js (App Router) project — it deploys on Vercel with ze
 
 ## Disclaimer
 
-This site is a design/demo project. The client portal still uses demo (non-persisted) authentication and mock data — only the intake and contact forms write real records to Supabase. Stripe Checkout is real and will process live charges once `STRIPE_SECRET_KEY` is set to a live key.
+This site is a design/demo project. The client-facing portal still uses demo (non-persisted) authentication and mock data — only the intake/contact forms and the admin portal write real records to Supabase. Stripe Checkout is real and will process live charges once `STRIPE_SECRET_KEY` is set to a live key.

@@ -41,8 +41,29 @@ export async function POST(req: Request) {
     }
 
     const supabase = getSupabaseAdmin()
+
+    // Create the client record (or refresh it) the moment an intake is paid for,
+    // so the admin portal's client roster stays in sync automatically.
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .upsert(
+        {
+          full_name: intake.fullName ?? '',
+          email: intake.email ?? '',
+          phone: intake.phone ?? '',
+          date_of_birth: intake.dob || null,
+          state_of_residence: intake.stateOfResidence || null,
+        },
+        { onConflict: 'email' },
+      )
+      .select('id')
+      .single()
+
+    if (clientError) throw clientError
+
     const { error } = await supabase.from('intake_submissions').upsert(
       {
+        client_id: client.id,
         full_name: intake.fullName ?? '',
         date_of_birth: intake.dob || null,
         email: intake.email ?? '',
