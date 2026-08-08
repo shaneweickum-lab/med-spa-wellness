@@ -31,7 +31,7 @@ export function Hero() {
             Reclaim your vitality.
           </h1>
           <p className="text-white/70 text-lg leading-relaxed max-w-xl">
-            Precision hormone optimization and peptide therapy programs, coordinated around your goals and
+            Precision peptide optimization and hormone therapy programs, coordinated around your goals and
             delivered by our independent, licensed clinical partner.
           </p>
         </div>
