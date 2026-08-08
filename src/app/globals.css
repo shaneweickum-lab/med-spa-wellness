@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-cormorant), serif;
+  --font-sans: var(--font-manrope), sans-serif;
+
+  --color-velvet: #0b0612;
+  --color-velvet-light: #150c22;
+  --color-royal: #3b0764;
+  --color-royal-light: #5b1a94;
+  --color-cerulean: #007ba7;
+  --color-cerulean-light: #2ea8d6;
+  --color-gold: #d4af37;
+  --color-gold-light: #f1d787;
+  --color-gold-dark: #9c7d21;
+  --color-blush: #e8b4c8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-velvet);
+  color: #f4ede2;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-velvet);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-velvet);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-royal), var(--color-cerulean));
+  border-radius: 999px;
+  border: 2px solid var(--color-velvet);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(90deg, #9c7d21, #f1d787 45%, #d4af37 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-velvet-gradient {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(59, 7, 100, 0.55), transparent 55%),
+    radial-gradient(circle at 85% 15%, rgba(0, 123, 167, 0.35), transparent 50%),
+    var(--color-velvet);
+}
+
+.gold-border {
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.gold-border-glow {
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.08), 0 8px 30px -10px rgba(212, 175, 55, 0.25);
+}
+
+.card-panel {
+  background: linear-gradient(160deg, rgba(59, 7, 100, 0.35), rgba(11, 6, 18, 0.65));
+  backdrop-filter: blur(6px);
+}
+
+.divider-gold {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
