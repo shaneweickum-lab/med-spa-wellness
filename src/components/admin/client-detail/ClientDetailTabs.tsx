@@ -81,7 +81,7 @@ export function ClientDetailTabs({
       </div>
 
       {tab === 'overview' && <OverviewTab client={client} />}
-      {tab === 'intake' && <IntakeTab submissions={intakeSubmissions} />}
+      {tab === 'intake' && <IntakeTab clientId={client.id} submissions={intakeSubmissions} />}
       {tab === 'protocols' && (
         <ProtocolsTab clientId={client.id} protocols={protocols} adminId={adminId} />
       )}

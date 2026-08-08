@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import { CalendarClock, FlaskConical, Syringe } from 'lucide-react'
 import { DisclaimerBanner } from '@/components/DisclaimerBanner'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Client, ClientProtocol, Appointment } from '@/types/admin'
 
 function formatAppointment(a: Appointment) {
@@ -15,13 +19,42 @@ function findNextAppointment(appointments: Appointment[]) {
 
 export function OverviewTab({
   client,
-  protocols,
-  appointments,
+  protocols: initialProtocols,
+  appointments: initialAppointments,
 }: {
   client: Client
   protocols: ClientProtocol[]
   appointments: Appointment[]
 }) {
+  const [protocols, setProtocols] = useState(initialProtocols)
+  const [appointments, setAppointments] = useState(initialAppointments)
+
+  useRealtimeChannel('client_protocols', `client_id=eq.${client.id}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setProtocols((prev) => prev.filter((p) => p.id !== oldId))
+      return
+    }
+    const row = payload.new as ClientProtocol
+    setProtocols((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((p) => (p.id === row.id ? row : p))
+      return prev.some((p) => p.id === row.id) ? prev : [row, ...prev]
+    })
+  })
+
+  useRealtimeChannel('appointments', `client_id=eq.${client.id}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setAppointments((prev) => prev.filter((a) => a.id !== oldId))
+      return
+    }
+    const row = payload.new as Appointment
+    setAppointments((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((a) => (a.id === row.id ? row : a))
+      return prev.some((a) => a.id === row.id) ? prev : [row, ...prev]
+    })
+  })
+
   const activeProtocols = protocols.filter((p) => p.status === 'active')
   const nextAppointment = findNextAppointment(appointments)
   const completedVisits = appointments.filter((a) => a.status === 'completed').length

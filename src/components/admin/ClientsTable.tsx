@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Client } from '@/types/admin'
 
 const statusStyle: Record<Client['status'], string> = {
@@ -12,15 +13,29 @@ const statusStyle: Record<Client['status'], string> = {
 }
 
 export function ClientsTable({ clients }: { clients: Client[] }) {
+  const [items, setItems] = useState(clients)
   const [query, setQuery] = useState('')
+
+  useRealtimeChannel('clients', undefined, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((c) => c.id !== oldId))
+      return
+    }
+    const row = payload.new as Client
+    setItems((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((c) => (c.id === row.id ? row : c))
+      return prev.some((c) => c.id === row.id) ? prev : [...prev, row]
+    })
+  })
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return clients
-    return clients.filter(
+    if (!q) return items
+    return items.filter(
       (c) => c.full_name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q),
     )
-  }, [clients, query])
+  }, [items, query])
 
   return (
     <div>

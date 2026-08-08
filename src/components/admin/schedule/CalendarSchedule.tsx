@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import {
   addDays,
   addMonths,
@@ -83,6 +84,22 @@ export function CalendarSchedule({ clients, adminId }: { clients: Client[]; admi
       cancelled = true
     }
   }, [rangeStartKey, rangeEndKey])
+
+  useRealtimeChannel('appointments', undefined, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setAppointments((prev) => prev.filter((a) => a.id !== oldId))
+      return
+    }
+    const row = payload.new as Appointment
+    const dateKey = getZonedDateKey(new Date(row.start_time))
+    const inRange = dateKey >= rangeStartKey && dateKey < rangeEndKey
+    setAppointments((prev) => {
+      const withoutRow = prev.filter((a) => a.id !== row.id)
+      if (!inRange) return withoutRow
+      return [...withoutRow, row].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    })
+  })
 
   const appointmentsByDate = useMemo(() => {
     const map = new Map<string, Appointment[]>()

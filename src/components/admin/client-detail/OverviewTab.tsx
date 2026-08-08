@@ -1,7 +1,17 @@
+'use client'
+
+import { useState } from 'react'
 import { Mail, Phone, Calendar, MapPin, BadgeCheck } from 'lucide-react'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Client } from '@/types/admin'
 
-export function OverviewTab({ client }: { client: Client }) {
+export function OverviewTab({ client: initialClient }: { client: Client }) {
+  const [client, setClient] = useState(initialClient)
+
+  useRealtimeChannel('clients', `id=eq.${initialClient.id}`, (payload) => {
+    if (payload.eventType === 'UPDATE') setClient(payload.new as Client)
+  })
+
   const rows = [
     { icon: Mail, label: 'Email', value: client.email },
     { icon: Phone, label: 'Phone', value: client.phone },

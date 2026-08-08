@@ -5,6 +5,7 @@ import { AlertTriangle, Plus, X } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Field, TextInput, SelectInput } from '@/components/form/inputs'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Appointment } from '@/types/admin'
 
 const DURATIONS = [10, 15, 20, 25, 30, 35, 40, 45]
@@ -42,6 +43,24 @@ export function AppointmentsTab({ clientId, appointments }: { clientId: string; 
   })
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  useRealtimeChannel('appointments', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((a) => a.id !== oldId))
+      return
+    }
+    const row = payload.new as Appointment
+    setItems((prev) => {
+      const next =
+        payload.eventType === 'UPDATE'
+          ? prev.map((a) => (a.id === row.id ? row : a))
+          : prev.some((a) => a.id === row.id)
+            ? prev
+            : [row, ...prev]
+      return next.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+    })
+  })
 
   async function handleSubmit() {
     setError(null)

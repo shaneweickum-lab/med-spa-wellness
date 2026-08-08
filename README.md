@@ -50,8 +50,13 @@ Run both migrations, in order, in your Supabase project's **SQL Editor** (or via
 3. [`supabase/migrations/0003_appointments_payments.sql`](./supabase/migrations/0003_appointments_payments.sql) — adds a `type` column to `appointments` (`intake` / `consultation` / `follow_up` / `other`) and a general `payments` table (`method`: `card` / `cash` / `other`) so a client's history and billing can be tracked regardless of how they eventually pay — including a future non-card method — without that method needing to be named in the schema.
 4. [`supabase/migrations/0004_superadmin.sql`](./supabase/migrations/0004_superadmin.sql) — adds a `superadmin` role and an `email` column to `admin_profiles`, plus the RLS policies a superadmin needs to list and revoke other admin accounts.
 5. [`supabase/migrations/0005_client_portal.sql`](./supabase/migrations/0005_client_portal.sql) — links a client's own Supabase Auth account to their `clients` row (via a `user_id` column and two triggers, so linking works regardless of whether they pay for intake or sign in first), adds `address` / `emergency_contact` / `additional_notes` columns, and adds RLS policies letting a signed-in client read/write only their own `clients` row, read their own `client_protocols` and `appointments`, and read/send their own `client_messages`. Deliberately does **not** expose `client_notes` (admin-only) or `payments` to clients.
+6. [`supabase/migrations/0006_realtime.sql`](./supabase/migrations/0006_realtime.sql) — adds every app table to the `supabase_realtime` publication so the live updates described below actually fire (Realtime is off by default per table in Supabase). Safe to re-run.
 
 Then copy your project URL and keys into the environment variables above.
+
+### Real-time everywhere
+
+Every table backing the admin and client portals — clients, intake submissions, notes, protocols, appointments, payments, messages, and staff accounts — pushes live updates to every open browser tab via [Supabase Realtime](https://supabase.com/docs/guides/realtime), not just messages. Add a client, log a payment, cancel an appointment, or send a message in one tab and it appears in any other open tab (admin or client portal, subject to the same RLS rules that already govern who can see what) without a page reload. This is implemented with a small shared hook, `src/lib/hooks/useRealtimeChannel.ts`, that every relevant tab/table component calls alongside its normal Supabase queries — it requires migration `0006_realtime.sql` to be applied, since Supabase tables aren't broadcast over Realtime by default.
 
 ### ⚠️ Client sign-in currently skips email verification (temporary)
 
