@@ -14,9 +14,9 @@ export function Hero() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-velvet/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-velvet via-velvet/50 to-velvet/70" />
-        <div className="absolute inset-0 bg-gradient-to-br from-royal/50 via-transparent to-cerulean/30" />
+        <div className="absolute inset-0 bg-velvet/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-velvet/90 via-velvet/25 to-velvet/45" />
+        <div className="absolute inset-0 bg-gradient-to-br from-royal/35 via-transparent to-cerulean/20" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32 flex flex-col items-center text-center gap-8">
