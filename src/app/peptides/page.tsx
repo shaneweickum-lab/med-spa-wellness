@@ -4,7 +4,7 @@ import { DisclaimerBanner } from '@/components/DisclaimerBanner'
 import { CatalogueClient } from '@/components/peptides/CatalogueClient'
 
 export const metadata: Metadata = {
-  title: 'Peptide & Hormone Protocol Catalogue | AETHERIA',
+  title: 'Peptide & Hormone Protocol Catalogue | Soulstys Meridian Wellness',
   description:
     'Explore our interactive catalogue of TRT, BHRT, and peptide therapy protocols for men and women.',
 }
@@ -27,7 +27,7 @@ export default async function PeptidesPage({
       <SectionHeading
         eyebrow="Protocol Catalogue"
         title="Peptide & Hormone Protocols"
-        subtitle="A curated library of therapies used across our TRT, BHRT, and peptide programs. Every protocol is individualized after labs and a physician consultation — nothing here is a prescription or self-directed treatment plan."
+        subtitle="A curated library of therapies used across our TRT, BHRT, and peptide programs. Every protocol is individualized after labs and evaluation by our independent, licensed clinical partner — nothing here is a prescription or self-directed treatment plan."
       />
 
       <div className="mt-10">

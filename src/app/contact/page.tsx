@@ -103,16 +103,17 @@ export default function ContactPage() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-gold shrink-0" />
-                concierge@aetheriamedspa.com
+                concierge@soulstysmeridian.com
               </li>
             </ul>
           </div>
           <div className="card-panel gold-border rounded-2xl p-6">
             <h3 className="font-display text-xl text-gold-light mb-2">Prefer Telehealth?</h3>
             <p className="text-white/60 text-sm leading-relaxed">
-              Most consultations and follow-ups can be conducted virtually. Learn more on our{' '}
-              <Link href="/telehealth" className="text-gold-light underline underline-offset-2">
-                Telehealth &amp; EMR
+              Most consultations and follow-ups can be conducted virtually through our clinical partner.
+              Learn more on our{' '}
+              <Link href="/platform" className="text-gold-light underline underline-offset-2">
+                Client Platform
               </Link>{' '}
               page.
             </p>

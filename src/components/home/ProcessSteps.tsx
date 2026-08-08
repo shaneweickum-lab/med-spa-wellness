@@ -4,8 +4,8 @@ import { SectionHeading } from '@/components/SectionHeading'
 const steps = [
   {
     icon: ClipboardList,
-    title: 'Intake & Quiz',
-    body: 'Complete our secure patient intake and symptom questionnaire from anywhere.',
+    title: 'Client Intake & Quiz',
+    body: 'Complete our secure client intake and symptom questionnaire from anywhere.',
   },
   {
     icon: FlaskConical,
@@ -14,13 +14,13 @@ const steps = [
   },
   {
     icon: Stethoscope,
-    title: 'Physician Review',
-    body: 'A licensed clinician reviews your results and designs your personalized protocol.',
+    title: 'Clinical Review',
+    body: 'Our independent, licensed clinical partner reviews your results and designs your personalized protocol.',
   },
   {
     icon: HeartPulse,
     title: 'Ongoing Care',
-    body: 'Telehealth check-ins, dose adjustments, and portal messaging keep you supported.',
+    body: 'Telehealth check-ins, progress tracking, and portal messaging keep you supported.',
   },
 ]
 
@@ -28,9 +28,9 @@ export function ProcessSteps() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-24">
       <SectionHeading
-        eyebrow="The AETHERIA Experience"
+        eyebrow="The Soulstys Meridian Experience"
         title="A refined path to optimization"
-        subtitle="From first questionnaire to ongoing telehealth support, every step is guided by licensed medical professionals."
+        subtitle="From first questionnaire to ongoing support, every step is coordinated with our independent, licensed clinical partner."
       />
 
       <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">

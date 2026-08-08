@@ -1,10 +1,10 @@
-import { Stethoscope, Lock, Video, FlaskConical } from 'lucide-react'
+import { Handshake, MessageSquare, Video, FlaskConical } from 'lucide-react'
 
 const items = [
-  { icon: Stethoscope, label: 'Licensed Physician Oversight' },
-  { icon: Lock, label: 'HIPAA-Conscious Intake' },
-  { icon: Video, label: 'Telehealth Visits Available' },
-  { icon: FlaskConical, label: 'Lab-Guided Protocols' },
+  { icon: Handshake, label: 'Partnered Licensed Healthcare Providers' },
+  { icon: MessageSquare, label: 'Simple, Guided Client Intake' },
+  { icon: Video, label: 'Telehealth Access via Our Partner' },
+  { icon: FlaskConical, label: 'Lab-Informed Protocols' },
 ]
 
 export function TrustBar() {

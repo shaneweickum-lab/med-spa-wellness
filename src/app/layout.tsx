@@ -19,9 +19,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "AETHERIA Medical Aesthetics & Wellness",
+  title: "Soulstys Meridian Wellness",
   description:
-    "AETHERIA is a bespoke medical aesthetics practice offering TRT, BHRT, and peptide therapy protocols for men and women, guided by licensed clinicians.",
+    "Soulstys Meridian Wellness is a concierge client experience for TRT, BHRT, and peptide therapy programs — intake, tracking, and communication, delivered in partnership with an independent licensed healthcare provider.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
