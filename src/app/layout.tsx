@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
-import { FocusProvider } from "@/context/FocusContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
@@ -21,7 +20,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Soulstys Meridian Wellness",
   description:
-    "Soulstys Meridian Wellness is a concierge client experience for TRT, BHRT, and peptide therapy programs — intake, tracking, and communication, delivered in partnership with an independent licensed healthcare provider.",
+    "Soulstys Meridian Wellness is a concierge client experience for HRT and peptide therapy programs — intake, tracking, and communication, delivered in partnership with an independent licensed healthcare provider.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -31,11 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${cormorant.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-velvet-gradient">
-        <FocusProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </FocusProvider>
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

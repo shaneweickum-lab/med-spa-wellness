@@ -6,8 +6,8 @@ const columns = [
   {
     title: 'Programs',
     links: [
-      { href: '/peptides?focus=men', label: "Men's TRT & Performance" },
-      { href: '/peptides?focus=women', label: "Women's BHRT & Glow" },
+      { href: '/peptides?type=hormone', label: 'Hormone Therapy (HRT)' },
+      { href: '/peptides?type=peptide', label: 'Peptide Therapy' },
       { href: '/peptides', label: 'Peptide Protocol Catalogue' },
     ],
   },
@@ -41,9 +41,9 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-white/60 leading-relaxed max-w-sm">
-              Soulstys Meridian Wellness is a concierge client experience for TRT, BHRT, and peptide
-              therapy programs — intake, tracking, and communication, connecting you with an independent
-              licensed healthcare partner for every clinical service.
+              Soulstys Meridian Wellness is a concierge client experience for HRT and peptide therapy
+              programs — intake, tracking, and communication, connecting you with an independent licensed
+              healthcare partner for every clinical service.
             </p>
             <div className="mt-5 flex gap-4 text-white/50">
               <a href="#" aria-label="Instagram" className="hover:text-gold-light transition-colors">

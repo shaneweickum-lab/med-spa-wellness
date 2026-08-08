@@ -8,13 +8,10 @@ import { DisclaimerBanner } from '@/components/DisclaimerBanner'
 import { Field, TextInput, TextArea, CheckboxRow, ScaleField } from '@/components/form/inputs'
 import { INTAKE_FEE_LABEL } from '@/lib/pricing'
 
-type Focus = 'men' | 'women'
-
 interface IntakeData {
   consentAcknowledged: boolean
   contactConsent: boolean
   eSignature: string
-  focus: Focus
   fullName: string
   dob: string
   email: string
@@ -36,22 +33,16 @@ const conditionOptions = [
   'None of the above',
 ]
 
-const menSymptoms = [
+const symptomOptions = [
   'Low energy / fatigue',
   'Low libido',
-  'Decreased muscle mass or strength',
   'Poor sleep quality',
   'Mood or focus changes',
-  'Slow recovery from exercise',
-]
-
-const womenSymptoms = [
-  'Hot flashes / night sweats',
-  'Mood swings or irritability',
-  'Poor sleep quality',
-  'Low libido',
   'Weight changes',
-  'Skin, hair, or energy changes',
+  'Hot flashes / night sweats',
+  'Decreased muscle mass or strength',
+  'Slow recovery from exercise',
+  'Skin & hair changes',
 ]
 
 const steps = ['Consent', 'Personal Info', 'Health History', 'Symptom Quiz', 'Review & Pay']
@@ -62,7 +53,6 @@ const initial: IntakeData = {
   consentAcknowledged: false,
   contactConsent: false,
   eSignature: '',
-  focus: 'men',
   fullName: '',
   dob: '',
   email: '',
@@ -82,6 +72,8 @@ export function IntakeForm() {
   const [submitted, setSubmitted] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
 
   useEffect(() => {
     const payment = searchParams.get('payment')
@@ -91,32 +83,47 @@ export function IntakeForm() {
     // from Stripe Checkout — not a derived-state loop.
     /* eslint-disable react-hooks/set-state-in-effect */
     const draft = window.sessionStorage.getItem(DRAFT_KEY)
+    let restored: IntakeData | null = null
+    if (draft) {
+      try {
+        restored = JSON.parse(draft)
+        setData(restored as IntakeData)
+      } catch {
+        // ignore malformed draft
+      }
+    }
+
     if (payment === 'success') {
-      if (draft) {
-        try {
-          setData(JSON.parse(draft))
-        } catch {
-          // ignore malformed draft
-        }
-        window.sessionStorage.removeItem(DRAFT_KEY)
+      const sessionId = searchParams.get('session_id')
+      if (!sessionId) {
+        setConfirmError('Missing payment confirmation details. Please contact us if you were charged.')
+        return
       }
-      setSubmitted(true)
+      setIsConfirming(true)
+      fetch('/api/intake/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, intake: restored ?? data }),
+      })
+        .then(async (res) => {
+          const payload = await res.json()
+          if (!res.ok) throw new Error(payload.error || 'Unable to confirm your intake.')
+          window.sessionStorage.removeItem(DRAFT_KEY)
+          setSubmitted(true)
+        })
+        .catch((err) => {
+          setConfirmError(
+            `${err instanceof Error ? err.message : 'Unable to confirm your intake.'} (Reference: ${sessionId})`,
+          )
+        })
+        .finally(() => setIsConfirming(false))
     } else if (payment === 'cancelled') {
-      if (draft) {
-        try {
-          setData(JSON.parse(draft))
-        } catch {
-          // ignore malformed draft
-        }
-      }
       setStep(steps.length - 1)
       setPaymentError('Payment was cancelled — your responses were kept. You can try again when ready.')
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const symptomList = data.focus === 'men' ? menSymptoms : womenSymptoms
 
   function update<K extends keyof IntakeData>(key: K, value: IntakeData[K]) {
     setData((d) => ({ ...d, [key]: value }))
@@ -150,7 +157,6 @@ export function IntakeForm() {
           name: data.fullName,
           email: data.email,
           phone: data.phone,
-          focus: data.focus,
         }),
       })
       const payload = await res.json()
@@ -164,6 +170,30 @@ export function IntakeForm() {
       setIsPaying(false)
       setPaymentError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     }
+  }
+
+  if (isConfirming) {
+    return (
+      <div className="card-panel gold-border-glow rounded-3xl p-10 text-center flex flex-col items-center gap-4">
+        <div className="h-10 w-10 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
+        <h2 className="font-display text-2xl text-gradient-gold">Confirming your payment…</h2>
+        <p className="text-white/60 text-sm max-w-md">Please don&rsquo;t close this page.</p>
+      </div>
+    )
+  }
+
+  if (confirmError) {
+    return (
+      <div className="card-panel gold-border rounded-3xl p-10 text-center flex flex-col items-center gap-4">
+        <AlertTriangle className="text-red-300" size={40} />
+        <h2 className="font-display text-2xl text-gold-light">We couldn&rsquo;t confirm your intake</h2>
+        <p className="text-white/70 max-w-lg text-sm">{confirmError}</p>
+        <p className="text-white/50 max-w-lg text-xs">
+          If you were charged, please contact us at concierge@soulstysmeridian.com and include the
+          reference above — your payment is safe and our team can complete your intake manually.
+        </p>
+      </div>
+    )
   }
 
   if (submitted) {
@@ -232,7 +262,7 @@ export function IntakeForm() {
             <TextInput
               value={data.eSignature}
               onChange={(e) => update('eSignature', e.target.value)}
-              placeholder="Jane A. Doe"
+              placeholder="Jordan A. Doe"
             />
           </Field>
         </div>
@@ -240,23 +270,6 @@ export function IntakeForm() {
 
       {step === 1 && (
         <div className="grid md:grid-cols-2 gap-6">
-          <Field label="I am completing this intake for" required>
-            <div className="flex gap-3">
-              {(['men', 'women'] as Focus[]).map((f) => (
-                <button
-                  type="button"
-                  key={f}
-                  onClick={() => update('focus', f)}
-                  className={`flex-1 rounded-xl gold-border px-4 py-3 text-sm transition-colors ${
-                    data.focus === f ? 'bg-gradient-to-r from-royal to-cerulean text-white' : 'bg-white/5 text-white/60'
-                  }`}
-                >
-                  {f === 'men' ? "Men's TRT Program" : "Women's BHRT Program"}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <div />
           <Field label="Full Legal Name" required>
             <TextInput value={data.fullName} onChange={(e) => update('fullName', e.target.value)} />
           </Field>
@@ -301,7 +314,7 @@ export function IntakeForm() {
             Rate how much each symptom currently affects your quality of life. This helps our clinical
             partner prioritize your protocol.
           </p>
-          {symptomList.map((s) => (
+          {symptomOptions.map((s) => (
             <ScaleField
               key={s}
               label={s}
@@ -322,12 +335,11 @@ export function IntakeForm() {
             <p className="text-sm">Please review your responses before continuing to payment.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4 text-sm text-white/70">
-            <p><span className="text-gold-light">Program: </span>{data.focus === 'men' ? "Men's TRT" : "Women's BHRT"}</p>
             <p><span className="text-gold-light">Name: </span>{data.fullName || '—'}</p>
             <p><span className="text-gold-light">DOB: </span>{data.dob || '—'}</p>
             <p><span className="text-gold-light">Email: </span>{data.email || '—'}</p>
             <p><span className="text-gold-light">Phone: </span>{data.phone || '—'}</p>
-            <p><span className="text-gold-light">Conditions: </span>{data.conditions.join(', ') || 'None reported'}</p>
+            <p className="sm:col-span-2"><span className="text-gold-light">Conditions: </span>{data.conditions.join(', ') || 'None reported'}</p>
           </div>
 
           <div className="gold-border rounded-2xl bg-white/5 p-5 flex items-center justify-between gap-4">

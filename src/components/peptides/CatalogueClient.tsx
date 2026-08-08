@@ -2,29 +2,28 @@
 
 import { useMemo, useState } from 'react'
 import { ProtocolCard } from '@/components/ProtocolCard'
-import { protocols, type ProtocolCategory } from '@/data/protocols'
+import { protocols, type ProtocolModality } from '@/data/protocols'
 
-type Filter = 'all' | ProtocolCategory
+type Filter = 'all' | ProtocolModality
 
 const filters: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All Protocols' },
-  { id: 'men', label: "Men's" },
-  { id: 'women', label: "Women's" },
-  { id: 'both', label: 'Unisex' },
+  { id: 'hormone', label: 'Hormone Therapy' },
+  { id: 'peptide', label: 'Peptide Therapy' },
 ]
 
-export function CatalogueClient({ initialFocus }: { initialFocus: Filter }) {
-  const [active, setActive] = useState<Filter>(initialFocus)
+export function CatalogueClient({ initialType }: { initialType: Filter }) {
+  const [active, setActive] = useState<Filter>(initialType)
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
     return protocols.filter((p) => {
-      const matchesCategory = active === 'all' || p.category === active
+      const matchesType = active === 'all' || p.modality === active
       const matchesQuery =
         query.trim() === '' ||
         p.name.toLowerCase().includes(query.toLowerCase()) ||
         p.group.toLowerCase().includes(query.toLowerCase())
-      return matchesCategory && matchesQuery
+      return matchesType && matchesQuery
     })
   }, [active, query])
 
