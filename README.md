@@ -53,15 +53,19 @@ Run both migrations, in order, in your Supabase project's **SQL Editor** (or via
 
 Then copy your project URL and keys into the environment variables above.
 
-### Supabase Auth settings for the client portal's magic links
+### ⚠️ Client sign-in currently skips email verification (temporary)
 
-The client portal uses passwordless "magic link" sign-in (`supabase.auth.signInWithOtp`), which emails the client a one-time link back to `/portal/auth/confirm`. For that redirect to be accepted rather than silently falling back to your project's default Site URL:
+`/portal/login` currently signs a client in from their email address alone — no confirmation link, no proof they actually own that inbox. It still creates a real Supabase Auth session behind the scenes (via `POST /api/portal/instant-login`, which uses the Admin API's `generateLink` + a server-side `verifyOtp` to establish the session without ever sending an email), so every RLS policy still applies unchanged — only the "prove you own this email" step is skipped.
 
-1. In the Supabase dashboard, go to **Authentication → URL Configuration**.
-2. Set **Site URL** to your production URL (e.g. `https://soulstysmeridian.com`).
-3. Add `https://soulstysmeridian.com/portal/auth/confirm` (and `http://localhost:3000/portal/auth/confirm` for local dev) under **Redirect URLs**.
+**This means anyone who knows (or guesses) a client's email can currently open that client's portal.** It was disabled on request to remove friction while the portal is still being set up/tested. Before real clients use this in production, switch back to real verification:
 
-Supabase's default shared email service works out of the box for this (no SMTP setup required), but has modest rate limits — for real client volume, configure a custom SMTP provider under **Authentication → Emails** when you're ready to go beyond testing.
+1. In `src/components/portal/PortalLoginForm.tsx`, swap the `fetch('/api/portal/instant-login')` call back to `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: ... } })` (the previous implementation, still in git history).
+2. Delete `src/app/api/portal/instant-login/route.ts`.
+3. Configure the redirect URL Supabase needs for real magic links:
+   - Supabase dashboard → **Authentication → URL Configuration**.
+   - Set **Site URL** to your production URL (e.g. `https://soulstysmeridian.com`).
+   - Add `https://soulstysmeridian.com/portal/auth/confirm` (and `http://localhost:3000/portal/auth/confirm` for local dev) under **Redirect URLs**. The `/portal/auth/confirm` route that exchanges the emailed link for a session is still in place and unused in the meantime.
+   - Supabase's default shared email service works out of the box (no SMTP setup required) but has modest rate limits — configure a custom SMTP provider under **Authentication → Emails** for real client volume.
 
 ### Creating admin (staff) accounts
 
@@ -84,9 +88,9 @@ Everyone else can be created from that Staff tab, which can grant the `engineer`
 
 ## Client Portal (`/portal`)
 
-Real Supabase Auth, separate identity space from the admin portal (clients sign in with a magic link, never a password; admins/nurses sign in with a password, never a magic link).
+Real Supabase Auth, separate identity space from the admin portal (clients sign in by email, never a password; admins/nurses sign in with a password). See the warning above — email verification is temporarily disabled.
 
-- **Sign in** (`/portal/login`) — client enters their email, gets a one-time sign-in link. No account or password to manage.
+- **Sign in** (`/portal/login`) — client enters their email and is signed in immediately. No account or password to manage. (Temporarily: no verification that they own the email either — see above.)
 - **No client record found**: if someone signs in with an email that never completed intake, they see a message pointing them to `/intake` instead of an empty/broken dashboard.
 - **Overview** — their active protocol(s), next scheduled appointment, and completed-visit count, all pulled live (no hardcoded data).
 - **Messages** — the same `client_messages` thread the admin portal's Messages tab writes to, so messages sent by either side show up for both, in real time on next load.
