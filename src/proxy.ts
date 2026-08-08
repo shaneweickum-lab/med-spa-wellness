@@ -22,12 +22,13 @@ export async function proxy(request: NextRequest) {
   })
 
   // Refreshes the auth session cookie if needed. Route-level guards (in
-  // src/app/admin/(dashboard)/layout.tsx) handle the actual access checks.
+  // src/app/admin/(dashboard)/layout.tsx and
+  // src/app/portal/(dashboard)/layout.tsx) handle the actual access checks.
   await supabase.auth.getUser()
 
   return response
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/portal/:path*'],
 }

@@ -9,7 +9,7 @@ Soulstys Meridian Wellness is a client experience and care-coordination company 
 - Interactive peptide & hormone protocol catalogue with disclaimers (filterable by Hormone Therapy / Peptide Therapy)
 - Multi-step client intake & symptom quiz with a paid intake fee (Stripe Checkout), saved to Supabase after a verified payment
 - Client platform overview (intake, tracking, communication, partner model)
-- Client portal with secure messaging and personal info management (demo auth)
+- **Client portal** (`/portal`) — real Supabase Auth (magic-link sign-in), with live Overview, secure two-way Messages, and an editable Personal Info tab, all backed by the client's own account
 - Consultation booking page, saved to Supabase
 - **Admin portal** (`/admin`) — an EMR-style console for staff: client roster, per-client intake answers, assigned protocols, internal notes, secure messaging, and appointment scheduling
 
@@ -49,8 +49,19 @@ Run both migrations, in order, in your Supabase project's **SQL Editor** (or via
 2. [`supabase/migrations/0002_admin_emr.sql`](./supabase/migrations/0002_admin_emr.sql) — the admin portal schema: `admin_profiles`, `clients`, `client_notes`, `client_messages`, `client_protocols`, `appointments`, plus a `client_id` link added to `intake_submissions`. RLS restricts every one of these tables to authenticated users who have a row in `admin_profiles`.
 3. [`supabase/migrations/0003_appointments_payments.sql`](./supabase/migrations/0003_appointments_payments.sql) — adds a `type` column to `appointments` (`intake` / `consultation` / `follow_up` / `other`) and a general `payments` table (`method`: `card` / `cash` / `other`) so a client's history and billing can be tracked regardless of how they eventually pay — including a future non-card method — without that method needing to be named in the schema.
 4. [`supabase/migrations/0004_superadmin.sql`](./supabase/migrations/0004_superadmin.sql) — adds a `superadmin` role and an `email` column to `admin_profiles`, plus the RLS policies a superadmin needs to list and revoke other admin accounts.
+5. [`supabase/migrations/0005_client_portal.sql`](./supabase/migrations/0005_client_portal.sql) — links a client's own Supabase Auth account to their `clients` row (via a `user_id` column and two triggers, so linking works regardless of whether they pay for intake or sign in first), adds `address` / `emergency_contact` / `additional_notes` columns, and adds RLS policies letting a signed-in client read/write only their own `clients` row, read their own `client_protocols` and `appointments`, and read/send their own `client_messages`. Deliberately does **not** expose `client_notes` (admin-only) or `payments` to clients.
 
 Then copy your project URL and keys into the environment variables above.
+
+### Supabase Auth settings for the client portal's magic links
+
+The client portal uses passwordless "magic link" sign-in (`supabase.auth.signInWithOtp`), which emails the client a one-time link back to `/portal/auth/confirm`. For that redirect to be accepted rather than silently falling back to your project's default Site URL:
+
+1. In the Supabase dashboard, go to **Authentication → URL Configuration**.
+2. Set **Site URL** to your production URL (e.g. `https://soulstysmeridian.com`).
+3. Add `https://soulstysmeridian.com/portal/auth/confirm` (and `http://localhost:3000/portal/auth/confirm` for local dev) under **Redirect URLs**.
+
+Supabase's default shared email service works out of the box for this (no SMTP setup required), but has modest rate limits — for real client volume, configure a custom SMTP provider under **Authentication → Emails** when you're ready to go beyond testing.
 
 ### Creating admin (staff) accounts
 
@@ -71,9 +82,19 @@ Creating a Supabase Auth user does **not** by itself grant admin portal access �
 
 Everyone else can be created from that Staff tab, which can grant the `engineer`, `nurse`, or `admin` roles — **not** `superadmin`. Granting superadmin is deliberately left as a manual SQL step (same query as above) so it's never a one-click action from the UI. All non-superadmin roles currently have equal, full access to client/scheduling data; `role` is stored per account so finer-grained permissions (e.g. restricting nurses from certain actions) can be added later without a schema change.
 
+## Client Portal (`/portal`)
+
+Real Supabase Auth, separate identity space from the admin portal (clients sign in with a magic link, never a password; admins/nurses sign in with a password, never a magic link).
+
+- **Sign in** (`/portal/login`) — client enters their email, gets a one-time sign-in link. No account or password to manage.
+- **No client record found**: if someone signs in with an email that never completed intake, they see a message pointing them to `/intake` instead of an empty/broken dashboard.
+- **Overview** — their active protocol(s), next scheduled appointment, and completed-visit count, all pulled live (no hardcoded data).
+- **Messages** — the same `client_messages` thread the admin portal's Messages tab writes to, so messages sent by either side show up for both, in real time on next load.
+- **Personal Info** — edit name, DOB, phone, mailing address, emergency contact, and notes for the care team. Email is read-only here (changing it would break the account-to-client link, so it's a "contact us" change instead).
+
 ## Admin Portal (`/admin`)
 
-An EMR-style console, separate from the public site (no marketing nav/footer) and gated by real Supabase Auth — distinct from the client portal's demo login.
+An EMR-style console, separate from the public site (no marketing nav/footer) and gated by real Supabase Auth — a completely separate account system from the client portal above.
 
 - **Clients** (`/admin/clients`) — full roster, searchable by name/email/phone. Clients are created automatically the moment someone completes and pays for intake, or can be added manually (`New Client`).
 - **Client detail** (`/admin/clients/[id]`) — tabs for Overview, Intake Answers (their submitted questionnaire), Protocols (assign/manage peptide & HRT protocols from the catalogue), Appointments (full history, including the initial intake logged automatically once paid), Payments (running total + manual entry for cash/card/other), Notes (internal, never shown to the client), and Messages (secure two-way thread).
@@ -97,4 +118,4 @@ This is a standard Next.js (App Router) project — it deploys on Vercel with ze
 
 ## Disclaimer
 
-This site is a design/demo project. The client-facing portal still uses demo (non-persisted) authentication and mock data — only the intake/contact forms and the admin portal write real records to Supabase. Stripe Checkout is real and will process live charges once `STRIPE_SECRET_KEY` is set to a live key.
+This site is a design/demo project for a fictional business, but the client portal, admin portal, intake/contact forms, and Stripe Checkout are all real and will write live data / process live charges once the corresponding environment variables are set to production values.
