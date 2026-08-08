@@ -48,21 +48,28 @@ Run both migrations, in order, in your Supabase project's **SQL Editor** (or via
 1. [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) — `intake_submissions` and `contact_requests`. RLS enabled, no public policies; only reachable with the service role key from server-side code.
 2. [`supabase/migrations/0002_admin_emr.sql`](./supabase/migrations/0002_admin_emr.sql) — the admin portal schema: `admin_profiles`, `clients`, `client_notes`, `client_messages`, `client_protocols`, `appointments`, plus a `client_id` link added to `intake_submissions`. RLS restricts every one of these tables to authenticated users who have a row in `admin_profiles`.
 3. [`supabase/migrations/0003_appointments_payments.sql`](./supabase/migrations/0003_appointments_payments.sql) — adds a `type` column to `appointments` (`intake` / `consultation` / `follow_up` / `other`) and a general `payments` table (`method`: `card` / `cash` / `other`) so a client's history and billing can be tracked regardless of how they eventually pay — including a future non-card method — without that method needing to be named in the schema.
+4. [`supabase/migrations/0004_superadmin.sql`](./supabase/migrations/0004_superadmin.sql) — adds a `superadmin` role and an `email` column to `admin_profiles`, plus the RLS policies a superadmin needs to list and revoke other admin accounts.
 
 Then copy your project URL and keys into the environment variables above.
 
 ### Creating admin (staff) accounts
 
-Creating a Supabase Auth user does **not** by itself grant admin portal access — you must also add a matching row to `admin_profiles`. This two-step process is intentional so a stray sign-up can never grant access on its own:
+Creating a Supabase Auth user does **not** by itself grant admin portal access — you must also add a matching row to `admin_profiles`. This two-step process is intentional so a stray sign-up can never grant access on its own.
 
-1. In the Supabase dashboard, go to **Authentication → Users → Add user** and create an account for yourself or a nurse (email + password, or send an invite).
+**Bootstrapping your first superadmin** (do this once, manually — after that, superadmins can create every other account from the Staff tab in the app):
+
+1. In the Supabase dashboard, go to **Authentication → Users → Add user** and create your own account (email + password).
 2. Copy that user's UUID from the Users table.
 3. In the **SQL Editor**, run:
    ```sql
-   insert into public.admin_profiles (id, full_name, role)
-   values ('paste-the-user-uuid-here', 'Jane Doe', 'nurse'); -- role: 'engineer' | 'nurse' | 'admin'
+   insert into public.admin_profiles (id, full_name, email, role)
+   values ('paste-the-user-uuid-here', 'Your Name', 'you@example.com', 'superadmin')
+   on conflict (id) do update set role = 'superadmin';
    ```
-4. That person can now sign in at `/admin/login`. All admin accounts currently have equal access (see below); the `role` column is stored for future permission tiers if you ever want to restrict nurses from certain actions.
+   The `on conflict` makes this safe to re-run, and also works to promote an existing admin/nurse/engineer account to superadmin later.
+4. Sign in at `/admin/login` — you'll see a **Staff** tab (superadmin-only) for creating and revoking everyone else's accounts from then on, no more manual SQL needed for regular staff.
+
+Everyone else can be created from that Staff tab, which can grant the `engineer`, `nurse`, or `admin` roles — **not** `superadmin`. Granting superadmin is deliberately left as a manual SQL step (same query as above) so it's never a one-click action from the UI. All non-superadmin roles currently have equal, full access to client/scheduling data; `role` is stored per account so finer-grained permissions (e.g. restricting nurses from certain actions) can be added later without a schema change.
 
 ## Admin Portal (`/admin`)
 
@@ -71,10 +78,11 @@ An EMR-style console, separate from the public site (no marketing nav/footer) an
 - **Clients** (`/admin/clients`) — full roster, searchable by name/email/phone. Clients are created automatically the moment someone completes and pays for intake, or can be added manually (`New Client`).
 - **Client detail** (`/admin/clients/[id]`) — tabs for Overview, Intake Answers (their submitted questionnaire), Protocols (assign/manage peptide & HRT protocols from the catalogue), Appointments (full history, including the initial intake logged automatically once paid), Payments (running total + manual entry for cash/card/other), Notes (internal, never shown to the client), and Messages (secure two-way thread).
 - **Schedule** (`/admin/schedule`) — day view of appointments with a form to block time for a client in 10–45 minute blocks (5-minute increments), with a basic overlap warning.
+- **Staff** (`/admin/staff`, **superadmin only**) — create new admin/nurse/engineer accounts (sets a temporary password directly, no email step required) and revoke access for existing ones. Hidden from the nav for non-superadmins, and the route itself redirects them away if visited directly.
 
 The moment a client's paid intake is confirmed, the app automatically logs both a `payments` row (the intake fee) and an `appointments` row (type `intake`, marked completed) — so every client's history starts from that first touchpoint without any manual data entry.
 
-All authenticated admins (nurses and engineers alike) currently have equal, full access to the admin portal.
+All non-superadmin admins (nurses, engineers, plain "admin") currently have equal, full access to client and scheduling data — the roles don't yet restrict anything among themselves. Superadmin is the one tier that unlocks something extra: managing other accounts.
 
 ## Build
 
