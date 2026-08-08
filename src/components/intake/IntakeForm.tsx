@@ -144,31 +144,31 @@ export function IntakeForm() {
     return true
   })()
 
+  // TEMPORARY: bypasses Stripe Checkout for testing — submits the intake directly to
+  // /api/intake/test-submit instead of redirecting to Stripe. The real handler
+  // (POST /api/checkout/intake -> Stripe -> /api/intake/confirm) is untouched and
+  // still live; to restore it, swap this call back to a fetch('/api/checkout/intake')
+  // that redirects to payload.url, as it was before this bypass.
   async function handlePayment() {
     setPaymentError(null)
     setIsPaying(true)
     try {
-      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data))
-
-      const res = await fetch('/api/checkout/intake', {
+      const res = await fetch('/api/intake/test-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.fullName,
-          email: data.email,
-          phone: data.phone,
-        }),
+        body: JSON.stringify({ intake: data }),
       })
       const payload = await res.json()
 
-      if (!res.ok || !payload.url) {
-        throw new Error(payload.error || 'Unable to start checkout. Please try again.')
+      if (!res.ok) {
+        throw new Error(payload.error || 'Unable to submit your intake. Please try again.')
       }
 
-      window.location.href = payload.url
+      setSubmitted(true)
     } catch (err) {
-      setIsPaying(false)
       setPaymentError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setIsPaying(false)
     }
   }
 
@@ -202,13 +202,12 @@ export function IntakeForm() {
         <CheckCircle2 className="text-gold" size={48} />
         <h2 className="font-display text-3xl text-gradient-gold">Intake Received</h2>
         <p className="text-white/70 max-w-lg">
-          Thank you, {data.fullName.split(' ')[0] || 'friend'}. Your {INTAKE_FEE_LABEL} intake fee has been
-          received. A member of our care team will reach out within 1 business day to schedule your
-          evaluation with our clinical partner.
+          Thank you, {data.fullName.split(' ')[0] || 'friend'}. Your intake has been received. A member of
+          our care team will reach out within 1 business day to schedule your evaluation with our clinical
+          partner.
         </p>
         <p className="text-xs text-white/40 max-w-lg">
-          Payments are processed securely by Stripe. Soulstys Meridian Wellness never sees or stores your
-          card details.
+          Test mode: no {INTAKE_FEE_LABEL} intake fee was actually charged.
         </p>
       </div>
     )
@@ -353,6 +352,10 @@ export function IntakeForm() {
             <p className="font-display text-3xl text-gradient-gold shrink-0">{INTAKE_FEE_LABEL}</p>
           </div>
 
+          <p className="text-xs text-white/40 -mt-2">
+            Test mode: submitting below will not charge a card or open Stripe.
+          </p>
+
           {paymentError && (
             <p className="flex items-start gap-2 text-sm text-red-300">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
@@ -374,7 +377,7 @@ export function IntakeForm() {
           </Button>
         ) : (
           <Button variant="primary" onClick={handlePayment} disabled={isPaying}>
-            {isPaying ? 'Redirecting to payment…' : `Continue to Payment (${INTAKE_FEE_LABEL})`}
+            {isPaying ? 'Submitting…' : 'Submit Intake (test mode — no charge)'}
           </Button>
         )}
       </div>
