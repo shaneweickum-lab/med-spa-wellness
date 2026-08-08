@@ -5,6 +5,7 @@ import { AlertTriangle, Plus, X } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Field, TextInput, SelectInput } from '@/components/form/inputs'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Payment } from '@/types/admin'
 
 const methodLabel: Record<Payment['method'], string> = {
@@ -33,6 +34,24 @@ export function PaymentsTab({ clientId, payments, adminId }: { clientId: string;
   })
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  useRealtimeChannel('payments', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((p) => p.id !== oldId))
+      return
+    }
+    const row = payload.new as Payment
+    setItems((prev) => {
+      const next =
+        payload.eventType === 'UPDATE'
+          ? prev.map((p) => (p.id === row.id ? row : p))
+          : prev.some((p) => p.id === row.id)
+            ? prev
+            : [row, ...prev]
+      return next.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    })
+  })
 
   const total = items.filter((p) => p.status === 'paid').reduce((sum, p) => sum + p.amount_cents, 0)
 

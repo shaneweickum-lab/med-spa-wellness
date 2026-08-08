@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Send, UserRound } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { ClientMessage } from '@/types/admin'
 
 export function MessagesTab({
@@ -16,6 +17,12 @@ export function MessagesTab({
 }) {
   const [items, setItems] = useState(messages)
   const [draft, setDraft] = useState('')
+
+  useRealtimeChannel('client_messages', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType !== 'INSERT') return
+    const row = payload.new as ClientMessage
+    setItems((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]))
+  })
 
   async function send() {
     if (!draft.trim()) return

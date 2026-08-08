@@ -7,6 +7,7 @@ import type { ClientProtocol } from '@/types/admin'
 import { Button } from '@/components/Button'
 import { SelectInput } from '@/components/form/inputs'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 
 const statusStyle: Record<ClientProtocol['status'], string> = {
   active: 'text-cerulean-light border-cerulean/40 bg-cerulean/10',
@@ -27,6 +28,19 @@ export function ProtocolsTab({
   const [selectedProtocolId, setSelectedProtocolId] = useState(catalogue[0]?.id ?? '')
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  useRealtimeChannel('client_protocols', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((p) => p.id !== oldId))
+      return
+    }
+    const row = payload.new as ClientProtocol
+    setItems((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((p) => (p.id === row.id ? row : p))
+      return prev.some((p) => p.id === row.id) ? prev : [row, ...prev]
+    })
+  })
 
   async function handleAssign() {
     const chosen = catalogue.find((p) => p.id === selectedProtocolId)

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { AdminProfile } from '@/types/admin'
 
 const roleStyle: Record<AdminProfile['role'], string> = {
@@ -15,6 +16,19 @@ export function StaffTable({ staff, currentUserId }: { staff: AdminProfile[]; cu
   const [items, setItems] = useState(staff)
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+
+  useRealtimeChannel('admin_profiles', undefined, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((s) => s.id !== oldId))
+      return
+    }
+    const row = payload.new as AdminProfile
+    setItems((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((s) => (s.id === row.id ? row : s))
+      return prev.some((s) => s.id === row.id) ? prev : [...prev, row]
+    })
+  })
 
   async function revoke(id: string) {
     setError(null)

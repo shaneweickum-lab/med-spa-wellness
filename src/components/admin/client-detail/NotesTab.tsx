@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { TextArea } from '@/components/form/inputs'
 import { createClient } from '@/lib/supabase/client'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { ClientNote } from '@/types/admin'
 
 export function NotesTab({
@@ -22,6 +23,12 @@ export function NotesTab({
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  useRealtimeChannel('client_notes', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType !== 'INSERT') return
+    const row = payload.new as ClientNote
+    setItems((prev) => (prev.some((n) => n.id === row.id) ? prev : [row, ...prev]))
+  })
 
   async function handleAddNote() {
     if (!draft.trim()) return

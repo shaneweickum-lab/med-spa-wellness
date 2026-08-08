@@ -1,14 +1,33 @@
+'use client'
+
+import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { IntakeSubmission } from '@/types/admin'
 
-export function IntakeTab({ submissions }: { submissions: IntakeSubmission[] }) {
-  if (submissions.length === 0) {
+export function IntakeTab({ clientId, submissions }: { clientId: string; submissions: IntakeSubmission[] }) {
+  const [items, setItems] = useState(submissions)
+
+  useRealtimeChannel('intake_submissions', `client_id=eq.${clientId}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setItems((prev) => prev.filter((s) => s.id !== oldId))
+      return
+    }
+    const row = payload.new as IntakeSubmission
+    setItems((prev) => {
+      if (payload.eventType === 'UPDATE') return prev.map((s) => (s.id === row.id ? row : s))
+      return prev.some((s) => s.id === row.id) ? prev : [row, ...prev]
+    })
+  })
+
+  if (items.length === 0) {
     return <p className="text-white/50 py-10 text-center">No intake submission on file yet.</p>
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {submissions.map((s) => (
+      {items.map((s) => (
         <div key={s.id} className="card-panel gold-border rounded-2xl p-6 md:p-8">
           <div className="flex items-center gap-2 text-gold-light mb-6">
             <ShieldCheck size={18} />
