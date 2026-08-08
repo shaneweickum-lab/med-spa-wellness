@@ -1,13 +1,25 @@
+import Image from 'next/image'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 import { LinkButton } from '@/components/Button'
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-royal/40 blur-[120px]" aria-hidden />
-      <div className="absolute -top-20 -right-40 h-96 w-96 rounded-full bg-cerulean/30 blur-[120px]" aria-hidden />
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/hero_image.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-velvet/70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-velvet via-velvet/50 to-velvet/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-royal/50 via-transparent to-cerulean/30" />
+      </div>
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32 flex flex-col items-center text-center gap-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32 flex flex-col items-center text-center gap-8">
         <span className="flex items-center gap-2 rounded-full gold-border bg-white/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-gold-light">
           <ShieldCheck size={14} />
           Concierge Care Coordination &middot; Peptides &middot; HRT Programs
