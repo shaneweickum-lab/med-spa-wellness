@@ -69,9 +69,23 @@ export interface Appointment {
   start_time: string
   duration_minutes: number
   status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+  type: 'intake' | 'consultation' | 'follow_up' | 'other'
   reason: string | null
 }
 
 export interface AppointmentWithClient extends Appointment {
   clients: Pick<Client, 'id' | 'full_name'> | null
+}
+
+export interface Payment {
+  id: string
+  created_at: string
+  client_id: string
+  amount_cents: number
+  currency: string
+  method: 'card' | 'cash' | 'other'
+  status: 'paid' | 'pending' | 'refunded' | 'failed'
+  description: string | null
+  stripe_session_id: string | null
+  recorded_by: string | null
 }

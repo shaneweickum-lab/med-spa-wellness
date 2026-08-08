@@ -61,30 +61,65 @@ export async function POST(req: Request) {
 
     if (clientError) throw clientError
 
-    const { error } = await supabase.from('intake_submissions').upsert(
-      {
-        client_id: client.id,
-        full_name: intake.fullName ?? '',
-        date_of_birth: intake.dob || null,
-        email: intake.email ?? '',
-        phone: intake.phone ?? '',
-        state_of_residence: intake.stateOfResidence || null,
-        conditions: intake.conditions ?? [],
-        medications: intake.medications || null,
-        allergies: intake.allergies || null,
-        goals: intake.goals || null,
-        symptoms: intake.symptoms ?? {},
-        consent_acknowledged: !!intake.consentAcknowledged,
-        contact_consent: !!intake.contactConsent,
-        e_signature: intake.eSignature || null,
-        stripe_session_id: session.id,
-        stripe_payment_status: session.payment_status,
-        intake_fee_cents: INTAKE_FEE_CENTS,
-      },
-      { onConflict: 'stripe_session_id', ignoreDuplicates: true },
-    )
+    const { data: insertedSubmissions, error } = await supabase
+      .from('intake_submissions')
+      .upsert(
+        {
+          client_id: client.id,
+          full_name: intake.fullName ?? '',
+          date_of_birth: intake.dob || null,
+          email: intake.email ?? '',
+          phone: intake.phone ?? '',
+          state_of_residence: intake.stateOfResidence || null,
+          conditions: intake.conditions ?? [],
+          medications: intake.medications || null,
+          allergies: intake.allergies || null,
+          goals: intake.goals || null,
+          symptoms: intake.symptoms ?? {},
+          consent_acknowledged: !!intake.consentAcknowledged,
+          contact_consent: !!intake.contactConsent,
+          e_signature: intake.eSignature || null,
+          stripe_session_id: session.id,
+          stripe_payment_status: session.payment_status,
+          intake_fee_cents: INTAKE_FEE_CENTS,
+        },
+        { onConflict: 'stripe_session_id', ignoreDuplicates: true },
+      )
+      .select('id')
 
     if (error) throw error
+
+    // ignoreDuplicates means a re-confirmed session (e.g. a page refresh) returns
+    // no row here — only log the payment & initial appointment once, the first time.
+    const isNewSubmission = (insertedSubmissions?.length ?? 0) > 0
+    if (isNewSubmission) {
+      try {
+        await supabase.from('payments').upsert(
+          {
+            client_id: client.id,
+            amount_cents: INTAKE_FEE_CENTS,
+            method: 'card',
+            status: 'paid',
+            description: 'Client Intake Fee',
+            stripe_session_id: session.id,
+          },
+          { onConflict: 'stripe_session_id', ignoreDuplicates: true },
+        )
+
+        await supabase.from('appointments').insert({
+          client_id: client.id,
+          start_time: new Date().toISOString(),
+          duration_minutes: 30,
+          status: 'completed',
+          type: 'intake',
+          reason: 'Initial Intake',
+        })
+      } catch (bookkeepingError) {
+        // The client's intake and payment already succeeded — don't fail the
+        // request over these secondary admin-history records.
+        console.error('Failed to record intake payment/appointment history:', bookkeepingError)
+      }
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
