@@ -1,10 +1,11 @@
-export type ProtocolCategory = 'men' | 'women' | 'both'
+export type ProtocolModality = 'hormone' | 'peptide'
 
 export interface Protocol {
   id: string
   name: string
-  category: ProtocolCategory
   group: string
+  modality: ProtocolModality
+  featured?: boolean
   tagline: string
   description: string
   benefits: string[]
@@ -16,8 +17,8 @@ export const protocols: Protocol[] = [
   {
     id: 'trt-cypionate',
     name: 'Testosterone Cypionate / Enanthate',
-    category: 'men',
-    group: "Men's Performance · TRT",
+    group: 'Hormone Optimization · TRT',
+    modality: 'hormone',
     tagline: 'Foundational hormone optimization for vitality, drive, and lean mass.',
     description:
       'Bio-identical testosterone therapy designed to restore serum levels to an optimal physiologic range, guided by comprehensive lab panels and our clinical partner\'s oversight.',
@@ -28,19 +29,20 @@ export const protocols: Protocol[] = [
   {
     id: 'hcg-support',
     name: 'HCG Fertility Support',
-    category: 'men',
-    group: "Men's Performance · TRT",
+    group: 'Hormone Optimization · TRT',
+    modality: 'hormone',
     tagline: 'Preserves natural production alongside hormone therapy.',
     description:
-      'Human Chorionic Gonadotropin is used adjunctively with TRT to help maintain testicular volume and endogenous function.',
-    benefits: ['Supports fertility goals', 'Maintains testicular function', 'Synergistic with TRT protocols'],
+      'Human Chorionic Gonadotropin is used adjunctively with hormone therapy to help maintain reproductive function and endogenous production.',
+    benefits: ['Supports fertility goals', 'Maintains natural hormone function', 'Synergistic with hormone protocols'],
     administration: 'Low-dose subcutaneous injections, frequency set by protocol.',
   },
   {
     id: 'bpc-157',
     name: 'BPC-157',
-    category: 'both',
     group: 'Recovery & Repair Peptides',
+    modality: 'peptide',
+    featured: true,
     tagline: 'The "body protection compound" for tissue and gut healing.',
     description:
       'A researched peptide associated with accelerated soft-tissue repair, gut lining support, and reduced inflammatory response.',
@@ -50,8 +52,9 @@ export const protocols: Protocol[] = [
   {
     id: 'cjc-ipamorelin',
     name: 'CJC-1295 / Ipamorelin',
-    category: 'both',
     group: 'Growth Hormone Peptides',
+    modality: 'peptide',
+    featured: true,
     tagline: 'Synergistic growth-hormone-releasing peptide stack.',
     description:
       'A combination peptide protocol that supports the body\'s natural pulsatile release of growth hormone, often used for recovery, sleep quality, and body composition goals.',
@@ -61,8 +64,8 @@ export const protocols: Protocol[] = [
   {
     id: 'tesamorelin',
     name: 'Tesamorelin',
-    category: 'men',
     group: 'Growth Hormone Peptides',
+    modality: 'peptide',
     tagline: 'Targeted visceral fat reduction support.',
     description:
       'A growth-hormone-releasing hormone analogue studied for its effect on visceral adipose tissue and metabolic markers.',
@@ -72,9 +75,9 @@ export const protocols: Protocol[] = [
   {
     id: 'pt-141',
     name: 'PT-141 (Bremelanotide)',
-    category: 'both',
     group: 'Intimacy & Vitality',
-    tagline: 'Supports libido and sexual wellness for men and women.',
+    modality: 'peptide',
+    tagline: 'Supports libido and intimate wellness.',
     description:
       'A melanocortin peptide used to support healthy libido and sexual response as part of a broader hormone optimization plan.',
     benefits: ['Supports libido', 'Complements hormone therapy', 'Individualized dosing'],
@@ -82,10 +85,10 @@ export const protocols: Protocol[] = [
   },
   {
     id: 'bhrt-estrogen-progesterone',
-    name: 'BHRT — Estrogen & Progesterone',
-    category: 'women',
-    group: "Women's Hormones · BHRT",
-    tagline: 'Bio-identical balance for perimenopause & menopause.',
+    name: 'HRT — Estrogen & Progesterone',
+    group: 'Hormone Optimization · HRT',
+    modality: 'hormone',
+    tagline: 'Bio-identical balance through hormonal transitions.',
     description:
       'Custom-compounded bio-identical hormone therapy formulated to ease transitional symptoms and restore hormonal equilibrium.',
     benefits: ['Reduced hot flashes & night sweats', 'Improved sleep & mood', 'Support for bone & heart health'],
@@ -95,8 +98,8 @@ export const protocols: Protocol[] = [
   {
     id: 'bhrt-dhea-pregnenolone',
     name: 'DHEA & Pregnenolone',
-    category: 'women',
-    group: "Women's Hormones · BHRT",
+    group: 'Hormone Optimization · HRT',
+    modality: 'hormone',
     tagline: 'The "mother hormones" for energy and resilience.',
     description:
       'Precursor hormone support used to help restore adrenal balance, cognitive clarity, and overall vitality.',
@@ -106,8 +109,8 @@ export const protocols: Protocol[] = [
   {
     id: 'glow-nad',
     name: 'NAD+ Cellular Renewal',
-    category: 'women',
     group: 'Glow & Longevity',
+    modality: 'peptide',
     tagline: 'Cellular energy and radiance from within.',
     description:
       'NAD+ therapy supports mitochondrial function and cellular repair, frequently paired with our Glow aesthetic protocols.',
@@ -117,8 +120,9 @@ export const protocols: Protocol[] = [
   {
     id: 'glp-1',
     name: 'Semaglutide / Tirzepatide',
-    category: 'both',
     group: 'Metabolic & Weight Optimization',
+    modality: 'peptide',
+    featured: true,
     tagline: 'Provider-guided metabolic and weight management.',
     description:
       'GLP-1 receptor agonist therapy integrated into a broader metabolic optimization plan with nutritional and clinical support.',
@@ -129,8 +133,8 @@ export const protocols: Protocol[] = [
   {
     id: 'sermorelin',
     name: 'Sermorelin',
-    category: 'women',
     group: 'Growth Hormone Peptides',
+    modality: 'peptide',
     tagline: 'Gentle growth hormone support for graceful aging.',
     description:
       'A growth-hormone-releasing hormone analogue used to support natural GH rhythms, skin quality, and recovery.',
@@ -138,18 +142,3 @@ export const protocols: Protocol[] = [
     administration: 'Nightly subcutaneous injection.',
   },
 ]
-
-export const focusCopy = {
-  men: {
-    label: "Men's Performance",
-    kicker: 'TRT · Peptides · Vitality',
-    headline: 'Reclaim your edge.',
-    body: 'Precision testosterone optimization and peptide therapy engineered for energy, strength, and focus.',
-  },
-  women: {
-    label: "Women's Hormones",
-    kicker: 'BHRT · Peptides · Glow',
-    headline: 'Restore your balance.',
-    body: 'Bio-identical hormone therapy and glow protocols designed around your body\'s natural rhythm.',
-  },
-} as const

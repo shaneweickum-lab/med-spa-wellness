@@ -3,7 +3,7 @@ import { getStripeClient } from '@/lib/stripe'
 import { INTAKE_FEE_CENTS } from '@/lib/pricing'
 
 export async function POST(req: Request) {
-  let body: { name?: string; email?: string; phone?: string; focus?: string } = {}
+  let body: { name?: string; email?: string; phone?: string } = {}
   try {
     body = await req.json()
   } catch {
@@ -36,7 +36,6 @@ export async function POST(req: Request) {
       metadata: {
         name: body.name ?? '',
         phone: body.phone ?? '',
-        program: body.focus ?? '',
       },
       success_url: `${origin}/intake?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/intake?payment=cancelled`,

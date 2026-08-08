@@ -2,14 +2,36 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Mail, MapPin, Phone } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Mail, MapPin, Phone } from 'lucide-react'
 import { SectionHeading } from '@/components/SectionHeading'
 import { Button } from '@/components/Button'
 import { Field, TextInput, TextArea, SelectInput } from '@/components/form/inputs'
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', program: 'Men’s TRT', message: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', email: '', phone: '', program: 'Hormone Therapy (HRT)', message: '' })
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const payload = await res.json()
+      if (!res.ok) throw new Error(payload.error || 'Unable to submit your request. Please try again.')
+      setSubmitted(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to submit your request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-20">
@@ -31,13 +53,7 @@ export default function ContactPage() {
               </p>
             </div>
           ) : (
-            <form
-              className="grid sm:grid-cols-2 gap-6"
-              onSubmit={(e) => {
-                e.preventDefault()
-                setSubmitted(true)
-              }}
-            >
+            <form className="grid sm:grid-cols-2 gap-6" onSubmit={handleSubmit}>
               <Field label="Full Name" required>
                 <TextInput
                   required
@@ -66,8 +82,7 @@ export default function ContactPage() {
                   value={form.program}
                   onChange={(e) => setForm((f) => ({ ...f, program: e.target.value }))}
                 >
-                  <option>Men&rsquo;s TRT</option>
-                  <option>Women&rsquo;s BHRT</option>
+                  <option>Hormone Therapy (HRT)</option>
                   <option>Peptide Therapy</option>
                   <option>Not Sure Yet</option>
                 </SelectInput>
@@ -80,9 +95,15 @@ export default function ContactPage() {
                   />
                 </Field>
               </div>
+              {error && (
+                <p className="sm:col-span-2 flex items-start gap-2 text-sm text-red-300">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                  {error}
+                </p>
+              )}
               <div className="sm:col-span-2">
-                <Button type="submit" variant="primary" className="w-full sm:w-auto">
-                  Request Consultation
+                <Button type="submit" variant="primary" className="w-full sm:w-auto" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending…' : 'Request Consultation'}
                 </Button>
               </div>
             </form>

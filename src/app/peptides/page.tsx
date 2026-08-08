@@ -5,29 +5,28 @@ import { CatalogueClient } from '@/components/peptides/CatalogueClient'
 
 export const metadata: Metadata = {
   title: 'Peptide & Hormone Protocol Catalogue | Soulstys Meridian Wellness',
-  description:
-    'Explore our interactive catalogue of TRT, BHRT, and peptide therapy protocols for men and women.',
+  description: 'Explore our interactive catalogue of HRT and peptide therapy protocols.',
 }
 
 function toFilter(value: string | undefined) {
-  if (value === 'men' || value === 'women' || value === 'both') return value
+  if (value === 'hormone' || value === 'peptide') return value
   return 'all' as const
 }
 
 export default async function PeptidesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ focus?: string }>
+  searchParams: Promise<{ type?: string }>
 }) {
   const params = await searchParams
-  const initialFocus = toFilter(params.focus)
+  const initialType = toFilter(params.type)
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-20">
       <SectionHeading
         eyebrow="Protocol Catalogue"
         title="Peptide & Hormone Protocols"
-        subtitle="A curated library of therapies used across our TRT, BHRT, and peptide programs. Every protocol is individualized after labs and evaluation by our independent, licensed clinical partner — nothing here is a prescription or self-directed treatment plan."
+        subtitle="A curated library of therapies used across our HRT and peptide programs. Every protocol is individualized after labs and evaluation by our independent, licensed clinical partner — nothing here is a prescription or self-directed treatment plan."
       />
 
       <div className="mt-10">
@@ -35,7 +34,7 @@ export default async function PeptidesPage({
       </div>
 
       <div className="mt-12">
-        <CatalogueClient initialFocus={initialFocus} />
+        <CatalogueClient initialType={initialType} />
       </div>
     </div>
   )
