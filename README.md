@@ -104,20 +104,23 @@ Real Supabase Auth, separate identity space from the admin portal — clients an
 
 - **Sign in** (`/portal/login`) — email + password, the password chosen during intake.
 - **No client record found**: if someone signs in with an email that never completed intake, they see a message pointing them to `/intake` instead of an empty/broken dashboard.
-- **Overview** — their active protocol(s), next scheduled appointment, and completed-visit count, all pulled live (no hardcoded data).
+- **Overview** — their active protocol(s), next scheduled appointment, and completed-visit count, all pulled live (no hardcoded data). Shows a "Book an Appointment" shortcut when nothing is scheduled yet.
+- **Book Appointment** — pick any open 30-minute slot, **9:00 AM–5:00 PM Eastern**, on any date. Slots already taken by any client are greyed out, so two clients can't be double-booked into the same time. A client's very first booking is automatically logged as their `intake` appointment; every one after that is a `consultation`. Backed by `GET`/`POST /api/portal/appointments`, which resolves the client from their own session server-side (never from anything the client sends) and re-checks business hours and overlap before writing.
 - **Messages** — the same `client_messages` thread the admin portal's Messages tab writes to, so messages sent by either side show up for both, in real time on next load.
 - **Personal Info** — edit name, DOB, phone, mailing address, emergency contact, and notes for the care team. Email is read-only here (changing it would break the account-to-client link, so it's a "contact us" change instead).
+
+Right after intake, the client is automatically signed in with the password they just chose and dropped into `/portal?welcome=1`, which opens straight to **Book Appointment** so they can pick their own first appointment time — the app no longer auto-logs a placeholder "completed" appointment at the moment of intake.
 
 ## Admin Portal (`/admin`)
 
 An EMR-style console, separate from the public site (no marketing nav/footer) and gated by real Supabase Auth — a completely separate account system from the client portal above.
 
 - **Clients** (`/admin/clients`) — full roster, searchable by name/email/phone. Clients are created automatically the moment someone completes and pays for intake, or can be added manually (`New Client`).
-- **Client detail** (`/admin/clients/[id]`) — tabs for Overview, Intake Answers (their submitted questionnaire), Protocols (assign/manage peptide & HRT protocols from the catalogue), Appointments (full history, including the initial intake logged automatically once paid), Payments (running total + manual entry for cash/card/other), Notes (internal, never shown to the client), and Messages (secure two-way thread).
+- **Client detail** (`/admin/clients/[id]`) — tabs for Overview, Intake Answers (their submitted questionnaire), Protocols (assign/manage peptide & HRT protocols from the catalogue), Appointments (full history, including whatever the client books themselves from the portal), Payments (running total + manual entry for cash/card/other), Notes (internal, never shown to the client), and Messages (secure two-way thread).
 - **Schedule** (`/admin/schedule`) — full Month / Week / Day calendar. Day and Week show a 12:00 AM–11:59 PM time grid with a shaded business-hours band; click an open slot in that band (or the "New Appointment" button) to book. New appointments are restricted to **9:00 AM–5:00 PM Eastern** (`America/New_York`, so it's correct across the EST/EDT switch) — enforced in the form regardless of how it was opened, not just visually. Clicking a day in Month view drills into Day view for that date. Includes the same overlap warning as before.
 - **Staff** (`/admin/staff`, **superadmin only**) — create new admin/nurse/engineer accounts (sets a temporary password directly, no email step required) and revoke access for existing ones. Hidden from the nav for non-superadmins, and the route itself redirects them away if visited directly.
 
-The moment a client's paid intake is confirmed, the app automatically logs both a `payments` row (the intake fee) and an `appointments` row (type `intake`, marked completed) — so every client's history starts from that first touchpoint without any manual data entry.
+The moment a client's paid intake is confirmed, the app automatically logs a `payments` row (the intake fee). The client then books their own first appointment from the portal (see "Book Appointment" above), which is what actually creates their first `appointments` row.
 
 All non-superadmin admins (nurses, engineers, plain "admin") currently have equal, full access to client and scheduling data — the roles don't yet restrict anything among themselves. Superadmin is the one tier that unlocks something extra: managing other accounts.
 

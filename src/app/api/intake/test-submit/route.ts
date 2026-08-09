@@ -105,17 +105,9 @@ export async function POST(req: Request) {
           description: 'Client Intake Fee (test bypass — no real charge)',
           stripe_session_id: null,
         })
-
-        await supabase.from('appointments').insert({
-          client_id: client.id,
-          start_time: new Date().toISOString(),
-          duration_minutes: 30,
-          status: 'completed',
-          type: 'intake',
-          reason: 'Initial Intake',
-        })
       } catch (bookkeepingError) {
-        console.error('Failed to record test intake payment/appointment history:', bookkeepingError)
+        // The client's intake already succeeded — don't fail the request over this secondary record.
+        console.error('Failed to record test intake payment history:', bookkeepingError)
       }
     }
 

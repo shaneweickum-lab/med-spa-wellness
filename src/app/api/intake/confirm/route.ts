@@ -103,7 +103,8 @@ export async function POST(req: Request) {
     if (error) throw error
 
     // ignoreDuplicates means a re-confirmed session (e.g. a page refresh) returns
-    // no row here — only log the payment & initial appointment once, the first time.
+    // no row here — only log the payment once, the first time. The client's first
+    // appointment is scheduled by them from the portal, not auto-logged here.
     const isNewSubmission = (insertedSubmissions?.length ?? 0) > 0
     if (isNewSubmission) {
       try {
@@ -118,19 +119,10 @@ export async function POST(req: Request) {
           },
           { onConflict: 'stripe_session_id', ignoreDuplicates: true },
         )
-
-        await supabase.from('appointments').insert({
-          client_id: client.id,
-          start_time: new Date().toISOString(),
-          duration_minutes: 30,
-          status: 'completed',
-          type: 'intake',
-          reason: 'Initial Intake',
-        })
       } catch (bookkeepingError) {
         // The client's intake and payment already succeeded — don't fail the
-        // request over these secondary admin-history records.
-        console.error('Failed to record intake payment/appointment history:', bookkeepingError)
+        // request over this secondary admin-history record.
+        console.error('Failed to record intake payment history:', bookkeepingError)
       }
     }
 

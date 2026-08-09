@@ -1,16 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { LayoutDashboard, MessageSquare, UserCog } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { CalendarPlus, LayoutDashboard, MessageSquare, UserCog } from 'lucide-react'
 import { OverviewTab } from './OverviewTab'
 import { MessagesTab } from './MessagesTab'
 import { ProfileTab } from './ProfileTab'
+import { BookAppointmentTab } from './BookAppointmentTab'
 import type { Client, ClientProtocol, Appointment, ClientMessage } from '@/types/admin'
 
-type Tab = 'overview' | 'messages' | 'profile'
+type Tab = 'overview' | 'book' | 'messages' | 'profile'
 
 const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'book', label: 'Book Appointment', icon: CalendarPlus },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'profile', label: 'Personal Info', icon: UserCog },
 ]
@@ -26,7 +29,8 @@ export function PortalTabs({
   appointments: Appointment[]
   messages: ClientMessage[]
 }) {
-  const [tab, setTab] = useState<Tab>('overview')
+  const searchParams = useSearchParams()
+  const [tab, setTab] = useState<Tab>(searchParams.get('welcome') ? 'book' : 'overview')
 
   return (
     <div className="grid lg:grid-cols-[240px_1fr] gap-8">
@@ -47,7 +51,24 @@ export function PortalTabs({
       </aside>
 
       <div>
-        {tab === 'overview' && <OverviewTab client={client} protocols={protocols} appointments={appointments} />}
+        {searchParams.get('welcome') && (
+          <div className="gold-border-glow rounded-2xl bg-white/5 p-5 mb-6">
+            <p className="text-gold-light font-medium mb-1">Welcome, {client.full_name.split(' ')[0]}!</p>
+            <p className="text-white/60 text-sm">
+              Your intake is complete — pick a time below for your first appointment with our clinical
+              partner.
+            </p>
+          </div>
+        )}
+        {tab === 'overview' && (
+          <OverviewTab
+            client={client}
+            protocols={protocols}
+            appointments={appointments}
+            onBookAppointment={() => setTab('book')}
+          />
+        )}
+        {tab === 'book' && <BookAppointmentTab clientId={client.id} appointments={appointments} />}
         {tab === 'messages' && <MessagesTab clientId={client.id} clientName={client.full_name} messages={messages} />}
         {tab === 'profile' && <ProfileTab client={client} />}
       </div>

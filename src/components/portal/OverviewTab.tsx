@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CalendarClock, FlaskConical, Syringe } from 'lucide-react'
 import { DisclaimerBanner } from '@/components/DisclaimerBanner'
+import { Button } from '@/components/Button'
 import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Client, ClientProtocol, Appointment } from '@/types/admin'
 
@@ -21,10 +22,12 @@ export function OverviewTab({
   client,
   protocols: initialProtocols,
   appointments: initialAppointments,
+  onBookAppointment,
 }: {
   client: Client
   protocols: ClientProtocol[]
   appointments: Appointment[]
+  onBookAppointment?: () => void
 }) {
   const [protocols, setProtocols] = useState(initialProtocols)
   const [appointments, setAppointments] = useState(initialAppointments)
@@ -89,7 +92,14 @@ export function OverviewTab({
               <p className="text-xs text-white/40 mt-2">{formatAppointment(nextAppointment)}</p>
             </>
           ) : (
-            <p className="text-white/60 text-sm mt-1">Nothing scheduled</p>
+            <>
+              <p className="text-white/60 text-sm mt-1">Nothing scheduled</p>
+              {onBookAppointment && (
+                <Button variant="secondary" className="mt-3 !py-1.5 !px-3 !text-xs" onClick={onBookAppointment}>
+                  Book an Appointment
+                </Button>
+              )}
+            </>
           )}
         </div>
         <div className="card-panel gold-border rounded-2xl p-6">
