@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CalendarPlus, LayoutDashboard, MessageSquare, UserCog } from 'lucide-react'
 import { OverviewTab } from './OverviewTab'
@@ -62,11 +62,18 @@ export function PortalTabs({
     })
   })
 
-  useEffect(() => {
-    if (tab !== 'messages' || unreadIds.size === 0) return
-    fetch('/api/portal/messages/mark-read', { method: 'POST' }).catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, client.id])
+  function openTab(id: Tab) {
+    setTab(id)
+    if (id === 'messages' && unreadIds.size > 0) {
+      // Clear the badge immediately rather than waiting on the realtime echo
+      // of the update below — that round-trip can lag or, if Realtime isn't
+      // configured, never arrive at all. The server call still persists
+      // read_at; if it happens to fail, the next full page load re-derives
+      // unread state from the database anyway, so nothing is silently lost.
+      setUnreadIds(new Set())
+      fetch('/api/portal/messages/mark-read', { method: 'POST' }).catch(() => {})
+    }
+  }
 
   return (
     <div className="grid lg:grid-cols-[240px_1fr] gap-8">
@@ -75,7 +82,7 @@ export function PortalTabs({
           <button
             key={id}
             type="button"
-            onClick={() => setTab(id)}
+            onClick={() => openTab(id)}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm shrink-0 transition-colors ${
               tab === id ? 'bg-gradient-to-r from-royal to-cerulean text-white' : 'text-white/60 hover:bg-white/5'
             }`}
