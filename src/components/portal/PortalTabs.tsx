@@ -1,15 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CalendarPlus, LayoutDashboard, MessageSquare, UserCog } from 'lucide-react'
 import { OverviewTab } from './OverviewTab'
 import { MessagesTab } from './MessagesTab'
 import { ProfileTab } from './ProfileTab'
 import { BookAppointmentTab } from './BookAppointmentTab'
+import { NotificationBadge } from '@/components/NotificationBadge'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import type { Client, ClientProtocol, Appointment, ClientMessage } from '@/types/admin'
 
 type Tab = 'overview' | 'book' | 'messages' | 'profile'
+
+function unreadFromAdmin(messages: ClientMessage[]) {
+  return new Set(messages.filter((m) => m.sender === 'admin' && !m.read_at).map((m) => m.id))
+}
 
 const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -31,6 +37,36 @@ export function PortalTabs({
 }) {
   const searchParams = useSearchParams()
   const [tab, setTab] = useState<Tab>(searchParams.get('welcome') ? 'book' : 'overview')
+  const [unreadIds, setUnreadIds] = useState(() => unreadFromAdmin(messages))
+
+  useRealtimeChannel('client_messages', `client_id=eq.${client.id}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setUnreadIds((prev) => {
+        if (!oldId || !prev.has(oldId)) return prev
+        const next = new Set(prev)
+        next.delete(oldId)
+        return next
+      })
+      return
+    }
+    const row = payload.new as ClientMessage
+    setUnreadIds((prev) => {
+      const isUnreadFromAdmin = row.sender === 'admin' && !row.read_at
+      const alreadyTracked = prev.has(row.id)
+      if (isUnreadFromAdmin === alreadyTracked) return prev
+      const next = new Set(prev)
+      if (isUnreadFromAdmin) next.add(row.id)
+      else next.delete(row.id)
+      return next
+    })
+  })
+
+  useEffect(() => {
+    if (tab !== 'messages' || unreadIds.size === 0) return
+    fetch('/api/portal/messages/mark-read', { method: 'POST' }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, client.id])
 
   return (
     <div className="grid lg:grid-cols-[240px_1fr] gap-8">
@@ -46,6 +82,7 @@ export function PortalTabs({
           >
             <Icon size={18} />
             {label}
+            {id === 'messages' && <NotificationBadge count={unreadIds.size} />}
           </button>
         ))}
       </aside>

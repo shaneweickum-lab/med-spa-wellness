@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
-import type { Client } from '@/types/admin'
+import { NotificationBadge } from '@/components/NotificationBadge'
+import type { Client, ClientMessage } from '@/types/admin'
 
 const statusStyle: Record<Client['status'], string> = {
   active: 'text-cerulean-light border-cerulean/40 bg-cerulean/10',
@@ -12,9 +13,16 @@ const statusStyle: Record<Client['status'], string> = {
   inactive: 'text-white/50 border-white/20 bg-white/5',
 }
 
-export function ClientsTable({ clients }: { clients: Client[] }) {
+export function ClientsTable({
+  clients,
+  unreadMessages,
+}: {
+  clients: Client[]
+  unreadMessages: { id: string; client_id: string }[]
+}) {
   const [items, setItems] = useState(clients)
   const [query, setQuery] = useState('')
+  const [unreadMap, setUnreadMap] = useState(() => new Map(unreadMessages.map((m) => [m.id, m.client_id])))
 
   useRealtimeChannel('clients', undefined, (payload) => {
     if (payload.eventType === 'DELETE') {
@@ -28,6 +36,38 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
       return prev.some((c) => c.id === row.id) ? prev : [...prev, row]
     })
   })
+
+  useRealtimeChannel('client_messages', undefined, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      if (!oldId) return
+      setUnreadMap((prev) => {
+        if (!prev.has(oldId)) return prev
+        const next = new Map(prev)
+        next.delete(oldId)
+        return next
+      })
+      return
+    }
+    const row = payload.new as ClientMessage
+    setUnreadMap((prev) => {
+      const isUnreadFromClient = row.sender === 'client' && !row.read_at
+      const alreadyTracked = prev.has(row.id)
+      if (isUnreadFromClient === alreadyTracked) return prev
+      const next = new Map(prev)
+      if (isUnreadFromClient) next.set(row.id, row.client_id)
+      else next.delete(row.id)
+      return next
+    })
+  })
+
+  const unreadCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const clientId of unreadMap.values()) {
+      counts.set(clientId, (counts.get(clientId) ?? 0) + 1)
+    }
+    return counts
+  }, [unreadMap])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -68,8 +108,9 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
               {filtered.map((c) => (
                 <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                   <td className="px-5 py-3">
-                    <Link href={`/admin/clients/${c.id}`} className="text-gold-light hover:underline">
+                    <Link href={`/admin/clients/${c.id}`} className="inline-flex items-center gap-2 text-gold-light hover:underline">
                       {c.full_name}
+                      <NotificationBadge count={unreadCounts.get(c.id) ?? 0} />
                     </Link>
                   </td>
                   <td className="px-5 py-3 text-white/70">{c.email}</td>
