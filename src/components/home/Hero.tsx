@@ -12,7 +12,7 @@ export function Hero() {
           fill
           priority
           sizes="100vw"
-          className="object-cover"
+          className="object-cover object-[30%_center] sm:object-center"
         />
         <div className="absolute inset-0 bg-velvet/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-velvet/90 via-velvet/25 to-velvet/45" />
