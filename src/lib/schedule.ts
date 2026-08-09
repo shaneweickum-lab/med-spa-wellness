@@ -68,6 +68,15 @@ export function isWithinBusinessHours(startUtc: Date, durationMinutes: number): 
 
 export const BUSINESS_HOURS_LABEL = '9:00 AM–5:00 PM ET'
 
+/** Start-of-slot minute offsets (since midnight ET) for `durationMinutes`-long slots spaced `stepMinutes` apart, all fitting within business hours. */
+export function generateSlotStartMinutes(durationMinutes: number, stepMinutes: number = durationMinutes): number[] {
+  const slots: number[] = []
+  for (let m = BUSINESS_OPEN_MINUTES; m + durationMinutes <= BUSINESS_CLOSE_MINUTES; m += stepMinutes) {
+    slots.push(m)
+  }
+  return slots
+}
+
 // --- Calendar-grid "cursor" dates ------------------------------------------
 //
 // These represent a pure Y/M/D calendar date, manipulated using UTC getters

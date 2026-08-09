@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { Lock, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Field, TextInput } from '@/components/form/inputs'
+import { createClient } from '@/lib/supabase/client'
 
-export function PortalLoginForm({ initialError = null }: { initialError?: string | null }) {
+export function PortalLoginForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(initialError)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -17,13 +19,9 @@ export function PortalLoginForm({ initialError = null }: { initialError?: string
     setError(null)
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/portal/instant-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      const payload = await res.json()
-      if (!res.ok) throw new Error(payload.error || 'Unable to sign in. Please try again.')
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw new Error('Incorrect email or password.')
       router.push('/portal')
       router.refresh()
     } catch (err) {
@@ -55,6 +53,16 @@ export function PortalLoginForm({ initialError = null }: { initialError?: string
             />
           </Field>
 
+          <Field label="Password" required>
+            <TextInput
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </Field>
+
           {error && (
             <p className="flex items-start gap-2 text-sm text-red-300">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
@@ -69,8 +77,8 @@ export function PortalLoginForm({ initialError = null }: { initialError?: string
 
         <p className="flex items-start gap-2 text-xs text-white/40 mt-6">
           <ShieldCheck size={14} className="mt-0.5 shrink-0 text-gold/60" />
-          You must have completed a client intake for this email to access your portal. (Temporary: email
-          verification is disabled for now — this signs you in immediately.)
+          You must have completed a client intake to have a portal password. If you&rsquo;ve forgotten
+          yours, contact us at concierge@soulstysmeridian.com.
         </p>
       </div>
     </div>

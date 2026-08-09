@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, Lock, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { DisclaimerBanner } from '@/components/DisclaimerBanner'
 import { Field, TextInput, TextArea, CheckboxRow, ScaleField } from '@/components/form/inputs'
 import { INTAKE_FEE_LABEL } from '@/lib/pricing'
+import { createClient } from '@/lib/supabase/client'
 
 interface IntakeData {
   consentAcknowledged: boolean
@@ -16,6 +17,7 @@ interface IntakeData {
   dob: string
   email: string
   phone: string
+  password: string
   stateOfResidence: string
   conditions: string[]
   medications: string
@@ -57,6 +59,7 @@ const initial: IntakeData = {
   dob: '',
   email: '',
   phone: '',
+  password: '',
   stateOfResidence: '',
   conditions: [],
   medications: '',
@@ -66,9 +69,11 @@ const initial: IntakeData = {
 }
 
 export function IntakeForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [data, setData] = useState<IntakeData>(initial)
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
@@ -109,7 +114,8 @@ export function IntakeForm() {
           const payload = await res.json()
           if (!res.ok) throw new Error(payload.error || 'Unable to confirm your intake.')
           window.sessionStorage.removeItem(DRAFT_KEY)
-          setSubmitted(true)
+          const source = restored ?? data
+          await goToPortal(source.email, source.password)
         })
         .catch((err) => {
           setConfirmError(
@@ -138,9 +144,33 @@ export function IntakeForm() {
     }))
   }
 
+  // Signs the client into the account setClientPassword() just created/updated
+  // server-side, then sends them into the portal to pick their own first
+  // appointment time instead of one being auto-logged for them. Falls back to
+  // the plain "Intake Received" screen if sign-in fails for any reason.
+  async function goToPortal(email: string, password: string) {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      router.push('/portal?welcome=1')
+      router.refresh()
+    } catch {
+      setSubmitted(true)
+    }
+  }
+
   const canProceed = (() => {
     if (step === 0) return data.consentAcknowledged && data.contactConsent && data.eSignature.trim().length > 1
-    if (step === 1) return data.fullName && data.dob && data.email && data.phone
+    if (step === 1)
+      return (
+        data.fullName &&
+        data.dob &&
+        data.email &&
+        data.phone &&
+        data.password.length >= 8 &&
+        data.password === confirmPassword
+      )
     return true
   })()
 
@@ -164,7 +194,7 @@ export function IntakeForm() {
         throw new Error(payload.error || 'Unable to submit your intake. Please try again.')
       }
 
-      setSubmitted(true)
+      await goToPortal(data.email, data.password)
     } catch (err) {
       setPaymentError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
@@ -202,9 +232,12 @@ export function IntakeForm() {
         <CheckCircle2 className="text-gold" size={48} />
         <h2 className="font-display text-3xl text-gradient-gold">Intake Received</h2>
         <p className="text-white/70 max-w-lg">
-          Thank you, {data.fullName.split(' ')[0] || 'friend'}. Your intake has been received. A member of
-          our care team will reach out within 1 business day to schedule your evaluation with our clinical
-          partner.
+          Thank you, {data.fullName.split(' ')[0] || 'friend'}. Your intake has been received. Sign in to
+          your{' '}
+          <a href="/portal/login" className="text-gold-light underline">
+            client portal
+          </a>{' '}
+          with the email and password you chose to pick your first appointment time.
         </p>
         <p className="text-xs text-white/40 max-w-lg">
           Test mode: no {INTAKE_FEE_LABEL} intake fee was actually charged.
@@ -283,6 +316,28 @@ export function IntakeForm() {
           </Field>
           <Field label="State of Residence" hint="Helps us match you with the right care options.">
             <TextInput value={data.stateOfResidence} onChange={(e) => update('stateOfResidence', e.target.value)} />
+          </Field>
+          <Field label="Create a Client Portal Password" required hint="At least 8 characters.">
+            <TextInput
+              type="password"
+              value={data.password}
+              onChange={(e) => update('password', e.target.value)}
+              autoComplete="new-password"
+            />
+          </Field>
+          <Field
+            label="Confirm Password"
+            required
+            hint={
+              confirmPassword && confirmPassword !== data.password ? 'Passwords do not match.' : "You'll use this with your email to sign in to your client portal."
+            }
+          >
+            <TextInput
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
           </Field>
         </div>
       )}

@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import { getStripeClient } from '@/lib/stripe'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { INTAKE_FEE_CENTS } from '@/lib/pricing'
+import { setClientPassword } from '@/lib/portal/setClientPassword'
 
 interface IntakePayload {
   fullName?: string
   dob?: string
   email?: string
   phone?: string
+  password?: string
   stateOfResidence?: string
   conditions?: string[]
   medications?: string
@@ -41,6 +43,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = getSupabaseAdmin()
+    const email = (intake.email ?? '').trim().toLowerCase()
 
     // Create the client record (or refresh it) the moment an intake is paid for,
     // so the admin portal's client roster stays in sync automatically.
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
       .upsert(
         {
           full_name: intake.fullName ?? '',
-          email: intake.email ?? '',
+          email,
           phone: intake.phone ?? '',
           date_of_birth: intake.dob || null,
           state_of_residence: intake.stateOfResidence || null,
@@ -61,6 +64,16 @@ export async function POST(req: Request) {
 
     if (clientError) throw clientError
 
+    if (intake.password && intake.password.length >= 8) {
+      try {
+        await setClientPassword(supabase, email, intake.password)
+      } catch (passwordError) {
+        // The payment already succeeded — don't fail the confirmation over the
+        // client's portal login. They can still be granted access manually.
+        console.error('Failed to set client portal password:', passwordError)
+      }
+    }
+
     const { data: insertedSubmissions, error } = await supabase
       .from('intake_submissions')
       .upsert(
@@ -68,7 +81,7 @@ export async function POST(req: Request) {
           client_id: client.id,
           full_name: intake.fullName ?? '',
           date_of_birth: intake.dob || null,
-          email: intake.email ?? '',
+          email,
           phone: intake.phone ?? '',
           state_of_residence: intake.stateOfResidence || null,
           conditions: intake.conditions ?? [],
@@ -90,7 +103,8 @@ export async function POST(req: Request) {
     if (error) throw error
 
     // ignoreDuplicates means a re-confirmed session (e.g. a page refresh) returns
-    // no row here — only log the payment & initial appointment once, the first time.
+    // no row here — only log the payment once, the first time. The client's first
+    // appointment is scheduled by them from the portal, not auto-logged here.
     const isNewSubmission = (insertedSubmissions?.length ?? 0) > 0
     if (isNewSubmission) {
       try {
@@ -105,19 +119,10 @@ export async function POST(req: Request) {
           },
           { onConflict: 'stripe_session_id', ignoreDuplicates: true },
         )
-
-        await supabase.from('appointments').insert({
-          client_id: client.id,
-          start_time: new Date().toISOString(),
-          duration_minutes: 30,
-          status: 'completed',
-          type: 'intake',
-          reason: 'Initial Intake',
-        })
       } catch (bookkeepingError) {
         // The client's intake and payment already succeeded — don't fail the
-        // request over these secondary admin-history records.
-        console.error('Failed to record intake payment/appointment history:', bookkeepingError)
+        // request over this secondary admin-history record.
+        console.error('Failed to record intake payment history:', bookkeepingError)
       }
     }
 
