@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Lock, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { Field, TextInput } from '@/components/form/inputs'
 import { createClient } from '@/lib/supabase/client'
@@ -34,9 +35,14 @@ export function LoginForm() {
     <div className="mx-auto max-w-md w-full">
       <div className="card-panel gold-border-glow rounded-3xl p-8 md:p-10">
         <div className="flex flex-col items-center text-center gap-2 mb-8">
-          <div className="h-12 w-12 rounded-full gold-border flex items-center justify-center bg-white/5">
-            <Lock className="text-gold" size={22} />
-          </div>
+          <Image
+            src="/images/logo-mark.png"
+            alt="Soulstys Meridian Wellness"
+            width={913}
+            height={1037}
+            className="h-16 w-auto mb-1"
+            priority
+          />
           <h1 className="font-display text-3xl text-gradient-gold">Admin Portal</h1>
           <p className="text-white/60 text-sm">Staff sign-in for the Soulstys Meridian admin console.</p>
         </div>

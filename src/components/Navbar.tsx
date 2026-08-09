@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Sparkles } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { LinkButton } from './Button'
 
 const links = [
@@ -21,8 +22,8 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-gold/20 bg-velvet/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
-          <Sparkles className="text-gold group-hover:text-gold-light transition-colors" size={22} />
+        <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setOpen(false)}>
+          <Image src="/images/logo-mark.png" alt="" width={913} height={1037} className="h-9 w-auto" priority />
           <span className="font-display text-xl md:text-2xl tracking-[0.1em] md:tracking-[0.12em] text-gradient-gold whitespace-nowrap">
             SOULSTYS <span className="hidden sm:inline">MERIDIAN</span>
           </span>

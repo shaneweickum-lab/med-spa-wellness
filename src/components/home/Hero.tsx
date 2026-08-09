@@ -20,6 +20,15 @@ export function Hero() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-24 md:pt-28 md:pb-32 flex flex-col items-center text-center gap-8">
+        <Image
+          src="/images/logo-mark.png"
+          alt="Soulstys Meridian Wellness"
+          width={913}
+          height={1037}
+          className="h-24 md:h-28 w-auto"
+          priority
+        />
+
         <span className="flex items-center gap-2 rounded-full gold-border bg-white/5 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-gold-light">
           <ShieldCheck size={14} />
           Concierge Care Coordination &middot; Peptides &middot; HRT Programs
