@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   LayoutDashboard,
   ClipboardList,
@@ -26,8 +26,15 @@ import { NotesTab } from './NotesTab'
 import { MessagesTab } from './MessagesTab'
 import { AppointmentsTab } from './AppointmentsTab'
 import { PaymentsTab } from './PaymentsTab'
+import { NotificationBadge } from '@/components/NotificationBadge'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
+import { createClient } from '@/lib/supabase/client'
 
 type Tab = 'overview' | 'intake' | 'protocols' | 'appointments' | 'payments' | 'notes' | 'messages'
+
+function unreadFromClient(messages: ClientMessage[]) {
+  return new Set(messages.filter((m) => m.sender === 'client' && !m.read_at).map((m) => m.id))
+}
 
 const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -61,6 +68,45 @@ export function ClientDetailTabs({
   adminName: string
 }) {
   const [tab, setTab] = useState<Tab>('overview')
+  const [unreadIds, setUnreadIds] = useState(() => unreadFromClient(messages))
+
+  useRealtimeChannel('client_messages', `client_id=eq.${client.id}`, (payload) => {
+    if (payload.eventType === 'DELETE') {
+      const oldId = (payload.old as { id?: string }).id
+      setUnreadIds((prev) => {
+        if (!oldId || !prev.has(oldId)) return prev
+        const next = new Set(prev)
+        next.delete(oldId)
+        return next
+      })
+      return
+    }
+    const row = payload.new as ClientMessage
+    setUnreadIds((prev) => {
+      const isUnreadFromClient = row.sender === 'client' && !row.read_at
+      const alreadyTracked = prev.has(row.id)
+      if (isUnreadFromClient === alreadyTracked) return prev
+      const next = new Set(prev)
+      if (isUnreadFromClient) next.add(row.id)
+      else next.delete(row.id)
+      return next
+    })
+  })
+
+  useEffect(() => {
+    if (tab !== 'messages' || unreadIds.size === 0) return
+    const supabase = createClient()
+    supabase
+      .from('client_messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('client_id', client.id)
+      .eq('sender', 'client')
+      .is('read_at', null)
+      .then(({ error }) => {
+        if (error) console.error('Failed to mark messages as read:', error)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, client.id])
 
   return (
     <div>
@@ -76,6 +122,7 @@ export function ClientDetailTabs({
           >
             <Icon size={16} />
             {label}
+            {id === 'messages' && <NotificationBadge count={unreadIds.size} />}
           </button>
         ))}
       </div>

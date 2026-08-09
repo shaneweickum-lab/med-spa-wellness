@@ -6,11 +6,15 @@ import type { Client } from '@/types/admin'
 
 export default async function AdminClientsPage() {
   const supabase = await createClient()
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .returns<Client[]>()
+  const [{ data: clients }, { data: unread }] = await Promise.all([
+    supabase.from('clients').select('*').order('created_at', { ascending: false }).returns<Client[]>(),
+    supabase
+      .from('client_messages')
+      .select('id, client_id')
+      .eq('sender', 'client')
+      .is('read_at', null)
+      .returns<{ id: string; client_id: string }[]>(),
+  ])
 
   return (
     <div>
@@ -28,7 +32,7 @@ export default async function AdminClientsPage() {
         </Link>
       </div>
 
-      <ClientsTable clients={clients ?? []} />
+      <ClientsTable clients={clients ?? []} unreadMessages={unread ?? []} />
     </div>
   )
 }
