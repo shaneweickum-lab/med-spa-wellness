@@ -16,6 +16,7 @@ interface IntakeData {
   dob: string
   email: string
   phone: string
+  password: string
   stateOfResidence: string
   conditions: string[]
   medications: string
@@ -57,6 +58,7 @@ const initial: IntakeData = {
   dob: '',
   email: '',
   phone: '',
+  password: '',
   stateOfResidence: '',
   conditions: [],
   medications: '',
@@ -69,6 +71,7 @@ export function IntakeForm() {
   const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [data, setData] = useState<IntakeData>(initial)
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
@@ -140,7 +143,15 @@ export function IntakeForm() {
 
   const canProceed = (() => {
     if (step === 0) return data.consentAcknowledged && data.contactConsent && data.eSignature.trim().length > 1
-    if (step === 1) return data.fullName && data.dob && data.email && data.phone
+    if (step === 1)
+      return (
+        data.fullName &&
+        data.dob &&
+        data.email &&
+        data.phone &&
+        data.password.length >= 8 &&
+        data.password === confirmPassword
+      )
     return true
   })()
 
@@ -283,6 +294,28 @@ export function IntakeForm() {
           </Field>
           <Field label="State of Residence" hint="Helps us match you with the right care options.">
             <TextInput value={data.stateOfResidence} onChange={(e) => update('stateOfResidence', e.target.value)} />
+          </Field>
+          <Field label="Create a Client Portal Password" required hint="At least 8 characters.">
+            <TextInput
+              type="password"
+              value={data.password}
+              onChange={(e) => update('password', e.target.value)}
+              autoComplete="new-password"
+            />
+          </Field>
+          <Field
+            label="Confirm Password"
+            required
+            hint={
+              confirmPassword && confirmPassword !== data.password ? 'Passwords do not match.' : "You'll use this with your email to sign in to your client portal."
+            }
+          >
+            <TextInput
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
           </Field>
         </div>
       )}

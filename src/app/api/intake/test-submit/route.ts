@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { INTAKE_FEE_CENTS } from '@/lib/pricing'
+import { setClientPassword } from '@/lib/portal/setClientPassword'
 
 // TEMPORARY: bypasses Stripe entirely so intake can be tested without a real
 // charge. Writes the exact same clients / intake_submissions / payments /
@@ -14,6 +15,7 @@ interface IntakePayload {
   dob?: string
   email?: string
   phone?: string
+  password?: string
   stateOfResidence?: string
   conditions?: string[]
   medications?: string
@@ -37,6 +39,11 @@ export async function POST(req: Request) {
   if (!intake) {
     return NextResponse.json({ error: 'Missing intake data.' }, { status: 400 })
   }
+  if (!intake.password || intake.password.length < 8) {
+    return NextResponse.json({ error: 'A portal password of at least 8 characters is required.' }, { status: 400 })
+  }
+
+  const email = (intake.email ?? '').trim().toLowerCase()
 
   try {
     const supabase = getSupabaseAdmin()
@@ -46,7 +53,7 @@ export async function POST(req: Request) {
       .upsert(
         {
           full_name: intake.fullName ?? '',
-          email: intake.email ?? '',
+          email,
           phone: intake.phone ?? '',
           date_of_birth: intake.dob || null,
           state_of_residence: intake.stateOfResidence || null,
@@ -58,6 +65,8 @@ export async function POST(req: Request) {
 
     if (clientError) throw clientError
 
+    await setClientPassword(supabase, email, intake.password)
+
     const testSessionId = `test_${crypto.randomUUID()}`
 
     const { data: insertedSubmissions, error } = await supabase
@@ -66,7 +75,7 @@ export async function POST(req: Request) {
         client_id: client.id,
         full_name: intake.fullName ?? '',
         date_of_birth: intake.dob || null,
-        email: intake.email ?? '',
+        email,
         phone: intake.phone ?? '',
         state_of_residence: intake.stateOfResidence || null,
         conditions: intake.conditions ?? [],

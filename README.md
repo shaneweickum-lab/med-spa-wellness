@@ -9,7 +9,7 @@ Soulstys Meridian Wellness is a client experience and care-coordination company 
 - Interactive peptide & hormone protocol catalogue with disclaimers (filterable by Hormone Therapy / Peptide Therapy)
 - Multi-step client intake & symptom quiz with a paid intake fee (Stripe Checkout), saved to Supabase after a verified payment
 - Client platform overview (intake, tracking, communication, partner model)
-- **Client portal** (`/portal`) — real Supabase Auth (magic-link sign-in), with live Overview, secure two-way Messages, and an editable Personal Info tab, all backed by the client's own account
+- **Client portal** (`/portal`) — real Supabase Auth (email + password, chosen at intake), with live Overview, secure two-way Messages, and an editable Personal Info tab, all backed by the client's own account
 - Consultation booking page, saved to Supabase
 - **Admin portal** (`/admin`) — an EMR-style console for staff: client roster, per-client intake answers, assigned protocols, internal notes, secure messaging, and appointment scheduling
 
@@ -58,19 +58,13 @@ Then copy your project URL and keys into the environment variables above.
 
 Every table backing the admin and client portals — clients, intake submissions, notes, protocols, appointments, payments, messages, and staff accounts — pushes live updates to every open browser tab via [Supabase Realtime](https://supabase.com/docs/guides/realtime), not just messages. Add a client, log a payment, cancel an appointment, or send a message in one tab and it appears in any other open tab (admin or client portal, subject to the same RLS rules that already govern who can see what) without a page reload. This is implemented with a small shared hook, `src/lib/hooks/useRealtimeChannel.ts`, that every relevant tab/table component calls alongside its normal Supabase queries — it requires migration `0006_realtime.sql` to be applied, since Supabase tables aren't broadcast over Realtime by default.
 
-### ⚠️ Client sign-in currently skips email verification (temporary)
+### Client sign-in: email + password
 
-`/portal/login` currently signs a client in from their email address alone — no confirmation link, no proof they actually own that inbox. It still creates a real Supabase Auth session behind the scenes (via `POST /api/portal/instant-login`, which uses the Admin API's `generateLink` + a server-side `verifyOtp` to establish the session without ever sending an email), so every RLS policy still applies unchanged — only the "prove you own this email" step is skipped.
+Clients choose a portal password (min. 8 characters) as part of intake (`src/components/intake/IntakeForm.tsx`, Personal Info step). Whichever route finalizes their intake — the real Stripe-verified `POST /api/intake/confirm` or the current testing bypass `POST /api/intake/test-submit` — calls `setClientPassword()` (`src/lib/portal/setClientPassword.ts`), which creates their Supabase Auth account with that password (`email_confirm: true`, no separate "confirm your email" link — intake itself is the verification step) or, if they already have an account (e.g. re-submitting intake), updates its password instead.
 
-**This means anyone who knows (or guesses) a client's email can currently open that client's portal.** It was disabled on request to remove friction while the portal is still being set up/tested. Before real clients use this in production, switch back to real verification:
+`/portal/login` (`src/components/portal/PortalLoginForm.tsx`) collects email + password and signs in directly via `supabase.auth.signInWithPassword()` — no magic link, no email round-trip. This replaced an earlier temporary email-only sign-in used while the portal was still being set up; that bypass and the magic-link routes it depended on have been removed.
 
-1. In `src/components/portal/PortalLoginForm.tsx`, swap the `fetch('/api/portal/instant-login')` call back to `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: ... } })` (the previous implementation, still in git history).
-2. Delete `src/app/api/portal/instant-login/route.ts`.
-3. Configure the redirect URL Supabase needs for real magic links:
-   - Supabase dashboard → **Authentication → URL Configuration**.
-   - Set **Site URL** to your production URL (e.g. `https://soulstysmeridian.com`).
-   - Add `https://soulstysmeridian.com/portal/auth/confirm` (and `http://localhost:3000/portal/auth/confirm` for local dev) under **Redirect URLs**. The `/portal/auth/confirm` route that exchanges the emailed link for a session is still in place and unused in the meantime.
-   - Supabase's default shared email service works out of the box (no SMTP setup required) but has modest rate limits — configure a custom SMTP provider under **Authentication → Emails** for real client volume.
+One transition note: a client whose account predates this change (created before intake collected a password) has no password set and can't sign in until an admin resets one for them via the Supabase dashboard (**Authentication → Users → (their account) → Reset password**) or they re-submit intake.
 
 ### ⚠️ Client intake currently bypasses Stripe (temporary, for testing)
 
@@ -106,9 +100,9 @@ Everyone else can be created from that Staff tab, which can grant the `engineer`
 
 ## Client Portal (`/portal`)
 
-Real Supabase Auth, separate identity space from the admin portal (clients sign in by email, never a password; admins/nurses sign in with a password). See the warning above — email verification is temporarily disabled.
+Real Supabase Auth, separate identity space from the admin portal — clients and admins both sign in with email + password, but as two entirely separate account systems (a client's login never grants admin access, and vice versa). See "Client sign-in: email + password" above for how the password gets set.
 
-- **Sign in** (`/portal/login`) — client enters their email and is signed in immediately. No account or password to manage. (Temporarily: no verification that they own the email either — see above.)
+- **Sign in** (`/portal/login`) — email + password, the password chosen during intake.
 - **No client record found**: if someone signs in with an email that never completed intake, they see a message pointing them to `/intake` instead of an empty/broken dashboard.
 - **Overview** — their active protocol(s), next scheduled appointment, and completed-visit count, all pulled live (no hardcoded data).
 - **Messages** — the same `client_messages` thread the admin portal's Messages tab writes to, so messages sent by either side show up for both, in real time on next load.
