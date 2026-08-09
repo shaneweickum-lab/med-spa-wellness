@@ -1,5 +1,6 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { Sparkles, Camera, Globe, Phone, MapPin, Mail } from 'lucide-react'
+import { Camera, Globe, Phone, MapPin, Mail } from 'lucide-react'
 import { DisclaimerBanner } from './DisclaimerBanner'
 
 const columns = [
@@ -34,8 +35,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-14">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2">
-              <Sparkles className="text-gold" size={20} />
+            <Link href="/" className="flex items-center gap-2.5">
+              <Image src="/images/logo-mark.png" alt="" width={913} height={1037} className="h-10 w-auto" />
               <span className="font-display text-2xl tracking-[0.12em] text-gradient-gold">
                 SOULSTYS MERIDIAN
               </span>

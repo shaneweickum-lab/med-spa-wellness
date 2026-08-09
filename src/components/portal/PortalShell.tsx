@@ -1,8 +1,9 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogOut, Sparkles } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export function PortalShell({ clientName, children }: { clientName: string; children: React.ReactNode }) {
@@ -19,8 +20,8 @@ export function PortalShell({ clientName, children }: { clientName: string; chil
     <div className="min-h-screen bg-velvet-gradient flex flex-col">
       <header className="border-b border-gold/20 bg-velvet/80 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Sparkles className="text-gold" size={20} />
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/images/logo-mark.png" alt="" width={913} height={1037} className="h-8 w-auto" />
             <span className="font-display text-xl tracking-[0.1em] text-gradient-gold">
               SOULSTYS MERIDIAN <span className="text-white/50 text-sm tracking-normal font-sans">Client Portal</span>
             </span>
